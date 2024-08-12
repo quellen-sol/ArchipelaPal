@@ -1,6 +1,5 @@
-from BaseClasses import Region, ItemClassification, Entrance
+from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
-from worlds.generic.Rules import set_rule
 from .Items import APBotItem
 from .Locations import APBotLocation
 from .Options import APBotOptions
@@ -132,14 +131,15 @@ class APBot(World):
         self.multiworld.regions.append(hub)
         menu.connect(hub)
 
+        # Debug prints
         # print(self.item_name_to_id)
         # print(self.location_name_to_id)
         # print(self.item_table)
         # print(itempool)
-        for r in self.multiworld.regions:
-            print(f"{r.name} entrances:", [e for e in r.entrances])
-            print(f"{r.name} exits:", [ex for ex in r.exits])
-            print(f"{r.name} locations:", [loc for loc in r.locations])
+        # for r in self.multiworld.regions:
+        #     print(f"{r.name} entrances:", [e for e in r.entrances])
+        #     print(f"{r.name} exits:", [ex for ex in r.exits])
+        #     print(f"{r.name} locations:", [loc for loc in r.locations])
 
         self.multiworld.itempool += itempool
 
