@@ -58,8 +58,10 @@ class APBot(World):
         hub = Region("Hub", self.player, self.multiworld)
 
         # Create Single Chest that contains the starting location
-        starting_chest = APBotLocation(self.player, "Hub Free Chest", CHEST_ITEM_OFFSET, hub)
+        HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
+        starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
+        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID;
 
         total_junk_items = 0
         for region_num in range(num_regions):

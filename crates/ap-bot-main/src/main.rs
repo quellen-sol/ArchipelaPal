@@ -8,13 +8,11 @@ use std::{
 use anyhow::{anyhow, Result};
 use ap_rs::client::ArchipelagoClient;
 use clap::Parser;
-use defs::{Config, FullGameState, GameMap, LocationID, Player};
+use defs::{Config, FullGameState, GameMap, GoalOneShotData, LocationID, Player};
 use processes::{
-    game_playing_thread::spawn_game_playing_task,
-    game_state_handler::{spawn_game_state_task, StateMessage},
-    message_handler::spawn_ap_server_task,
+    game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
-use tokio::sync::{mpsc::channel, RwLock};
+use tokio::sync::{oneshot, RwLock};
 
 mod defs;
 mod processes;
@@ -86,24 +84,22 @@ async fn main() -> Result<()> {
 
     let (client_sender, client_receiver) = client.split();
 
-    let (tx, rx) = channel::<StateMessage>(1000);
-    let tx = Arc::new(tx);
+    // TODO: Get this from output!
+    let config = Config {
+        min_wait_time: 1,
+        max_wait_time: 1,
+        num_goal: 10,
+    };
+
+    let (goal_tx, goal_rx) = oneshot::channel::<GoalOneShotData>();
+
     // Spawn server listen thread
-    let server_handle = spawn_ap_server_task(tx.clone(), client_receiver);
-    // Spawn game state handler
-    let state_handle = spawn_game_state_task(rx, game_state.clone());
-    let game_handle = spawn_game_playing_task(
-        game_state.clone(),
-        client_sender,
-        // TODO get from output
-        Config {
-            min_wait_time: 1,
-            max_wait_time: 30,
-        },
-    );
+    let server_handle =
+        spawn_ap_server_task(game_state.clone(), client_receiver, config.clone(), goal_tx);
+    let game_handle =
+        spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);
 
     server_handle.await.unwrap();
-    state_handle.await.unwrap();
     game_handle.await.unwrap();
 
     Ok(())

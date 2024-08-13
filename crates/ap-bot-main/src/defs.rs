@@ -3,12 +3,19 @@ use std::{
     sync::Arc,
 };
 
+use ap_rs::protocol::RoomInfo;
 use rand::{seq::IteratorRandom, thread_rng};
 use tokio::sync::RwLock;
 
 pub type RegionID = u8;
 pub type LocationID = u32;
 pub type ItemID = u32;
+pub type GoalOneShotData = GoalData;
+
+#[derive(Debug)]
+pub struct GoalData {
+    pub room_info: RoomInfo,
+}
 
 pub struct FullGameState {
     pub player: Arc<RwLock<Player>>,
@@ -16,6 +23,7 @@ pub struct FullGameState {
 }
 
 impl FullGameState {
+    /// Returns a checked location's ID, if we check one
     pub async fn tick_game_state(&self) -> Option<LocationID> {
         // Check for all available checks
         // Check one random
@@ -45,6 +53,8 @@ impl FullGameState {
                 if let Some((region, _)) = first_avail {
                     player.currently_exploring_region = *region;
                 }
+
+                // We have nothing... we're BK'd!
                 None
             }
             Some(chest) => {
@@ -57,9 +67,11 @@ impl FullGameState {
     }
 }
 
+#[derive(Clone)]
 pub struct Config {
     pub min_wait_time: u16,
     pub max_wait_time: u16,
+    pub num_goal: u16,
 }
 
 #[derive(Debug)]

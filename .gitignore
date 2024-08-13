@@ -1,3 +1,4 @@
 target/
 *.apworld
 .env
+./q-local

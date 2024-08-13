@@ -11,9 +11,9 @@ game: APBot
 description: This is an example YAML
 
 APBot:
-  num_regions: 3
-  min_chests_per_region: 3
-  max_chests_per_region: 3
+  num_regions: 20
+  min_chests_per_region: 10
+  max_chests_per_region: 10
   min_time_between_checks: 5
   max_time_between_checks: 10
-  num_goal_items: 1
+  num_goal_items: 10
