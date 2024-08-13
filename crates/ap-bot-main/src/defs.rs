@@ -1,11 +1,10 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
+use anyhow::Result;
 use ap_rs::protocol::RoomInfo;
 use rand::{seq::IteratorRandom, thread_rng};
-use tokio::sync::RwLock;
+use serde::{Deserialize, Serialize};
+use tokio::{fs, sync::RwLock};
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -17,9 +16,11 @@ pub struct GoalData {
     pub room_info: RoomInfo,
 }
 
+#[derive(Debug, Default)]
 pub struct FullGameState {
     pub player: Arc<RwLock<Player>>,
     pub map: Arc<RwLock<GameMap>>,
+    pub seed_name: String,
 }
 
 impl FullGameState {
@@ -40,7 +41,7 @@ impl FullGameState {
                 .choose(&mut rng)
         };
 
-        match chest {
+        let checked_location = match chest {
             None => {
                 // Find the first region we DO have a key for and change current to that
                 let map = map.downgrade();
@@ -63,6 +64,66 @@ impl FullGameState {
 
                 Some(id)
             }
+        };
+
+        self.write_save_file()
+            .await
+            .inspect_err(|e| {
+                log::error!("Error saving file: {e}");
+            })
+            .ok();
+
+        checked_location
+    }
+
+    pub async fn write_save_file(&self) -> Result<()> {
+        let player_copy = self.player.read().await.clone();
+        let map_copy = self.map.read().await.clone();
+
+        let save_file = SaveFile {
+            player: player_copy,
+            map: map_copy,
+            seed: self.seed_name.clone(),
+        };
+
+        let savefile_json = serde_json::to_string(&save_file)?;
+
+        let save_path = Self::make_save_file_name(&self.seed_name);
+        fs::write(save_path, savefile_json).await?;
+
+        Ok(())
+    }
+
+    pub fn from_file_or_default(seed_name: &str) -> Self {
+        let name = Self::make_save_file_name(seed_name);
+        std::fs::read_to_string(&name)
+            .and_then(|file_str| serde_json::from_str::<SaveFile>(&file_str).map_err(|e| e.into()))
+            .inspect_err(|e| log::error!("Unable to read save file: {e}\nLoading a fresh save...."))
+            .unwrap_or_default()
+            .into()
+    }
+
+    fn make_save_file_name(seed_name: &str) -> String {
+        format!("save-file-{seed_name}.json")
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SaveFile {
+    player: Player,
+    map: GameMap,
+    seed: String,
+}
+
+impl From<SaveFile> for FullGameState {
+    fn from(value: SaveFile) -> Self {
+        let player = Arc::new(RwLock::new(value.player));
+        let map = Arc::new(RwLock::new(value.map));
+
+        Self {
+            map,
+            player,
+            seed_name: value.seed,
         }
     }
 }
@@ -74,7 +135,7 @@ pub struct Config {
     pub num_goal: u16,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GameMap {
     pub map: HashMap<RegionID, Vec<Chest>>,
 }
@@ -94,7 +155,7 @@ impl GameMap {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Chest {
     pub name: String,
     pub region: RegionID,
@@ -119,10 +180,10 @@ impl Chest {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Player {
     /// K = ItemID, V = qty
     pub inventory: HashMap<ItemID, u16>,
-    pub checked_locations: HashSet<LocationID>,
+    // pub checked_locations: HashSet<LocationID>,
     pub currently_exploring_region: RegionID,
 }

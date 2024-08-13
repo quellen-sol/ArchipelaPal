@@ -68,6 +68,7 @@ pub fn spawn_game_playing_task(
                 None => {
                     // BKd!
                     log::warn!("I'm BKd!!!");
+                    log::debug!("{game_state:?}");
                 }
                 Some(loc_id) => {
                     // Send a checked location packet!!! 🚀

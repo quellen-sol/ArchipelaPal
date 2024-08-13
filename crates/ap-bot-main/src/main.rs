@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     io::{stdin, stdout, Write},
     sync::Arc,
     vec,
@@ -8,11 +7,11 @@ use std::{
 use anyhow::{anyhow, Result};
 use ap_rs::client::ArchipelagoClient;
 use clap::Parser;
-use defs::{Config, FullGameState, GameMap, GoalOneShotData, LocationID, Player};
+use defs::{Config, FullGameState, GameMap, GoalOneShotData};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
-use tokio::sync::{oneshot, RwLock};
+use tokio::sync::oneshot;
 
 mod defs;
 mod processes;
@@ -45,7 +44,7 @@ async fn main() -> Result<()> {
     let mut client =
         ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
 
-    let connected_packet = client
+    let _ = client
         .connect(
             GAME_NAME,
             &args.slot_name,
@@ -57,29 +56,25 @@ async fn main() -> Result<()> {
 
     log::info!("Connected");
 
-    let checked_locations = &connected_packet.checked_locations;
-
     let this_game_data = client
         .data_package()
         .and_then(|dp| dp.games.get(GAME_NAME))
         .ok_or_else(|| anyhow!("Data package not preset for this game and slot???"))?;
 
-    let loc_to_id = &this_game_data.location_name_to_id;
-    let game_map = GameMap::new_from_data_package(loc_to_id);
+    let info = client.room_info();
+    log::info!("Seed: {}", info.seed_name);
 
-    log::info!("Game map: {game_map:?}");
+    let game_state = FullGameState::from_file_or_default(&info.seed_name);
 
-    let game_state = FullGameState {
-        player: Arc::new(RwLock::new(Player {
-            checked_locations: checked_locations
-                .iter()
-                .map(|id| *id as LocationID)
-                .collect(),
-            inventory: HashMap::new(),
-            currently_exploring_region: 0,
-        })),
-        map: Arc::new(RwLock::new(game_map)),
-    };
+    // Correct the game state if it ended up being a default
+    if game_state.seed_name.is_empty() {
+        let loc_to_id = &this_game_data.location_name_to_id;
+        let game_map = GameMap::new_from_data_package(loc_to_id);
+
+        let mut map_lock = game_state.map.write().await;
+        *map_lock = game_map;
+    }
+
     let game_state = Arc::new(game_state);
 
     let (client_sender, client_receiver) = client.split();
