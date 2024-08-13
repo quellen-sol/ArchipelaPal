@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use ap_rs::client::ArchipelagoClientSender;
 use rand::{thread_rng, Rng};
-use tokio::{sync::Mutex, task::JoinHandle};
+use tokio::task::JoinHandle;
 
 use crate::defs::{Config, FullGameState};
 
@@ -22,6 +22,8 @@ pub fn spawn_game_playing_task(
             };
             let duration = Duration::from_secs(wait_time.into());
             tokio::time::sleep(duration).await;
+
+            game_state.tick_game_state().await;
         }
     })
 }

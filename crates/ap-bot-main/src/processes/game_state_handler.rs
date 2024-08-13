@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use ap_rs::protocol::ServerMessage;
-use tokio::{
-    sync::{mpsc::Receiver, Mutex},
-    task::JoinHandle,
-};
+use tokio::{sync::mpsc::Receiver, task::JoinHandle};
 
 use crate::defs::FullGameState;
 

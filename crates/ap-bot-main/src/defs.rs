@@ -4,7 +4,7 @@ use std::{
 };
 
 use rand::{seq::IteratorRandom, thread_rng};
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -17,34 +17,41 @@ pub struct FullGameState {
 
 impl FullGameState {
     pub async fn tick_game_state(&self) -> Option<LocationID> {
-        let mut rng = thread_rng();
         // Check for all available checks
         // Check one random
-        let player = self.player.read().await;
+        let mut player = self.player.write().await;
         let mut map = self.map.write().await;
 
         // Check available chests in current region, and choose one to open
-        let chest = map
-            .map
-            .get_mut(&player.currently_exploring_region)
-            .map(|region| region.iter_mut().filter(|chest| !chest.checked))
-            .expect("Bad game mapping, could not find region")
-            .choose(&mut rng);
+        let chest = {
+            let mut rng = thread_rng();
+            map.map
+                .get_mut(&player.currently_exploring_region)
+                .map(|region| region.iter_mut().filter(|chest| !chest.checked))
+                .expect("Bad game mapping, could not find region")
+                .choose(&mut rng)
+        };
 
         match chest {
             None => {
                 // Find the first region we DO have a key for and change current to that
                 let map = map.downgrade();
-                map.map.iter().find(|(region, chests)| {
-
+                let first_avail = map.map.iter().find(|(region, chests)| {
+                    let key_id = **region as u32 + 0x020000;
+                    (player.inventory.contains_key(&key_id) || **region == 0)
+                        && chests.iter().any(|chest| !chest.checked)
                 });
-                return None;
+
+                if let Some((region, _)) = first_avail {
+                    player.currently_exploring_region = *region;
+                }
+                None
             }
             Some(chest) => {
                 let id = chest.full_id;
                 chest.checked = true;
 
-                return Some(id);
+                Some(id)
             }
         }
     }

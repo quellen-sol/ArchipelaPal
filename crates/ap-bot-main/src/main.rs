@@ -2,16 +2,11 @@ use std::{
     collections::HashMap,
     io::{stdin, stdout, Write},
     sync::Arc,
-    thread,
-    time::Duration,
     vec,
 };
 
-use anyhow::{anyhow, bail, Result};
-use ap_rs::{
-    client::ArchipelagoClient,
-    protocol::{LocationChecks, ServerMessage},
-};
+use anyhow::{anyhow, Result};
+use ap_rs::client::ArchipelagoClient;
 use clap::Parser;
 use defs::{Config, FullGameState, GameMap, LocationID, Player};
 use processes::{
@@ -19,7 +14,7 @@ use processes::{
     game_state_handler::{spawn_game_state_task, StateMessage},
     message_handler::spawn_ap_server_task,
 };
-use tokio::sync::{mpsc::channel, Mutex, RwLock};
+use tokio::sync::{mpsc::channel, RwLock};
 
 mod defs;
 mod processes;
@@ -36,7 +31,7 @@ struct Args {
     server_addr: Option<String>,
 }
 
-pub const GAME_NAME: &'static str = "APBot";
+pub const GAME_NAME: &str = "APBot";
 pub const ITEM_HANDLING: i32 = 0b111;
 
 #[tokio::main]
@@ -83,6 +78,7 @@ async fn main() -> Result<()> {
                 .map(|id| *id as LocationID)
                 .collect(),
             inventory: HashMap::new(),
+            currently_exploring_region: 0,
         })),
         map: Arc::new(RwLock::new(game_map)),
     };

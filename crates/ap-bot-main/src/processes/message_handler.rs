@@ -1,9 +1,6 @@
-use ap_rs::client::{ArchipelagoClient, ArchipelagoClientReceiver, ArchipelagoError};
+use ap_rs::client::ArchipelagoClientReceiver;
 use std::sync::Arc;
-use tokio::{
-    sync::{mpsc::Sender, Mutex},
-    task::JoinHandle,
-};
+use tokio::{sync::mpsc::Sender, task::JoinHandle};
 
 use super::game_state_handler::StateMessage;
 
