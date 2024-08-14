@@ -4,10 +4,7 @@ use anyhow::Result;
 use ap_rs::protocol::RoomInfo;
 use rand::{seq::IteratorRandom, thread_rng};
 use serde::{Deserialize, Serialize};
-use tokio::{
-    fs,
-    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
-};
+use tokio::{fs, sync::RwLock};
 
 pub type RegionID = u8;
 pub type LocationID = u32;

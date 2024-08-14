@@ -84,8 +84,8 @@ async fn main() -> Result<()> {
 
     // TODO: Get this from output!
     let config = Config {
-        min_wait_time: 1,
-        max_wait_time: 1,
+        min_wait_time: 5,
+        max_wait_time: 30,
         num_goal: 10,
     };
 
