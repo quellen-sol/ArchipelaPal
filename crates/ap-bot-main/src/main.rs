@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
     let info = client.room_info();
     log::info!("Seed: {}", info.seed_name);
 
-    let game_state = FullGameState::from_file_or_default(&info.seed_name);
+    let mut game_state = FullGameState::from_file_or_default(&info.seed_name);
 
     // Correct the game state if it ended up being a default
     if game_state.seed_name.is_empty() {
@@ -73,6 +73,9 @@ async fn main() -> Result<()> {
 
         let mut map_lock = game_state.map.write().await;
         *map_lock = game_map;
+        drop(map_lock);
+
+        game_state.seed_name = info.seed_name.clone();
     }
 
     let game_state = Arc::new(game_state);

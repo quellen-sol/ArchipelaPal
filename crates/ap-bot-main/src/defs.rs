@@ -4,7 +4,10 @@ use anyhow::Result;
 use ap_rs::protocol::RoomInfo;
 use rand::{seq::IteratorRandom, thread_rng};
 use serde::{Deserialize, Serialize};
-use tokio::{fs, sync::RwLock};
+use tokio::{
+    fs,
+    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
+};
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -26,44 +29,56 @@ pub struct FullGameState {
 impl FullGameState {
     /// Returns a checked location's ID, if we check one
     pub async fn tick_game_state(&self) -> Option<LocationID> {
-        // Check for all available checks
-        // Check one random
-        let mut player = self.player.write().await;
-        let mut map = self.map.write().await;
+        let player = self.player.read().await;
+        let map = self.map.read().await;
+        let player_region_keys = player.get_key_info();
+        log::debug!("Region keys: {:?}", player_region_keys);
 
-        // Check available chests in current region, and choose one to open
-        let chest = {
-            let mut rng = thread_rng();
-            map.map
-                .get_mut(&player.currently_exploring_region)
-                .map(|region| region.iter_mut().filter(|chest| !chest.checked))
-                .expect("Bad game mapping, could not find region")
-                .choose(&mut rng)
-        };
+        let search_region = player.currently_exploring_region;
+        let initial_chest = Self::choose_chest_in_region(&map, &search_region);
 
-        let checked_location = match chest {
-            None => {
-                // Find the first region we DO have a key for and change current to that
-                let map = map.downgrade();
-                let first_avail = map.map.iter().find(|(region, chests)| {
-                    let key_id = **region as u32 + 0x020000;
-                    (player.inventory.contains_key(&key_id) || **region == 0)
-                        && chests.iter().any(|chest| !chest.checked)
-                });
+        let alternate_chest = map.map.iter().find_map(|(region, chests)| {
+            if *region == search_region || !player_region_keys.contains(region) {
+                return None;
+            }
 
-                if let Some((region, _)) = first_avail {
-                    player.currently_exploring_region = *region;
+            chests.iter().enumerate().find_map(|(idx, chest)| {
+                if !chest.checked {
+                    return Some((*region, idx));
                 }
 
-                // We have nothing... we're BK'd!
                 None
+            })
+        });
+
+        drop(player);
+        drop(map);
+
+        let mapped_chest_options = initial_chest
+            .map(|idx| (search_region, idx))
+            .or(alternate_chest);
+
+        let chosen_check = if let Some((chosen_region, chosen_chest_idx)) = mapped_chest_options {
+            if chosen_region != search_region {
+                let mut player = self.player.write().await;
+                player.currently_exploring_region = chosen_region;
             }
-            Some(chest) => {
-                let id = chest.full_id;
+
+            let mut map = self.map.write().await;
+            let chest = map
+                .map
+                .get_mut(&chosen_region)
+                .and_then(|region| region.get_mut(chosen_chest_idx));
+
+            if let Some(chest) = chest {
                 chest.checked = true;
 
-                Some(id)
+                Some(chest.full_id)
+            } else {
+                None
             }
+        } else {
+            None
         };
 
         self.write_save_file()
@@ -73,7 +88,22 @@ impl FullGameState {
             })
             .ok();
 
-        checked_location
+        chosen_check
+    }
+
+    pub fn choose_chest_in_region(map_guard: &GameMap, region: &RegionID) -> Option<usize> {
+        let mut rng = thread_rng();
+        map_guard
+            .map
+            .get(region)
+            .map(|region| {
+                region
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(idx, chest)| if !chest.checked { Some(idx) } else { None })
+            })
+            .expect("Bad game mapping, could not find region")
+            .choose(&mut rng)
     }
 
     pub async fn write_save_file(&self) -> Result<()> {
@@ -186,4 +216,24 @@ pub struct Player {
     pub inventory: HashMap<ItemID, u16>,
     // pub checked_locations: HashSet<LocationID>,
     pub currently_exploring_region: RegionID,
+}
+
+impl Player {
+    pub fn get_key_info(&self) -> Vec<RegionID> {
+        log::debug!("{:?}", self.inventory);
+
+        self.inventory
+            .iter()
+            .filter_map(|(id, _)| {
+                let id_bytes = id.to_le_bytes();
+                let item_type = id_bytes[2];
+                let region = id_bytes[0];
+                if item_type == 0x02 {
+                    return Some(region);
+                }
+
+                None
+            })
+            .collect()
+    }
 }
