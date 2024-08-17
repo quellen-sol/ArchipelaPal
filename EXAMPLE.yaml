@@ -4,13 +4,13 @@ description: This is an example YAML that genrates between 50-100 chests with 10
 
 APBot:
   # Number of regions to generate, and number of chests per region
-  num_regions: 10
-  min_chests_per_region: 5
-  max_chests_per_region: 10
+  num_regions: 5
+  min_chests_per_region: 10
+  max_chests_per_region: 20
 
   # Time between checks, in seconds
-  min_time_between_checks: 
-  max_time_between_checks: 10
+  min_time_between_checks: 5
+  max_time_between_checks: 30
 
   # Number of goal items to generate that are required to win
   # Must be less than the number of chests
