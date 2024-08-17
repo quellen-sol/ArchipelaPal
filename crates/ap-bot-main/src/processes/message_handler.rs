@@ -28,7 +28,21 @@ pub fn spawn_ap_server_task(
                             if items.index == 0 {
                                 // What we receive is the ENTIRE inventory when idx == 0
                                 // Set the player's state and return
-                                let new_player_inventory = items.items.into_iter().fold(HashMap::new(), f)
+                                let new_player_inventory = items.items.into_iter().fold(
+                                    HashMap::new(),
+                                    |mut acc, curr| {
+                                        if curr.item < 0 {
+                                            return acc;
+                                        }
+                                        let id = curr.item as u32;
+                                        let amt = acc.entry(id).or_insert(0);
+                                        *amt += 1;
+
+                                        return acc;
+                                    },
+                                );
+
+                                player.inventory = new_player_inventory;
                             } else {
                                 for item in items.items.iter() {
                                     let id = item.item;
