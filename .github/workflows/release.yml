@@ -24,6 +24,7 @@ jobs:
         run: |
           cd ./world
           ./make_apworld.sh
+          cd -
 
       - name: Setup Targets
         run: |
@@ -38,6 +39,9 @@ jobs:
 
       - name: Build Windows Binary
         run: cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
+
+      - name: Debug
+        run: ls ./target
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
