@@ -1,4 +1,4 @@
-name: Release
+name: Draft Release
 
 on:
   push:
@@ -9,9 +9,6 @@ env:
   LINUX_GNU_TARGET: x86_64-unknown-linux-gnu
   WINDOWS_GNU_TARGET: x86_64-pc-windows-gnu
 
-# Should run the following steps:
-# Checkout
-# `cargo build` to get both a linux and windows binary
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,10 +41,7 @@ jobs:
           cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
           zip -j ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ap-bot.exe
 
-      - name: Debug
-        run: ls ./target
-
-      - name: Create GitHub Release
+      - name: Create Draft GitHub Release
         uses: actions/create-release@v1
         id: create_release
         env:
@@ -56,7 +50,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: APBot Release ${{ github.ref }}
           draft: true
-          prerelease: true
+          prerelease: false
       
       - name: Upload Linux Asset
         uses: actions/upload-release-asset@v1
