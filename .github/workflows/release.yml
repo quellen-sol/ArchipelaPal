@@ -5,11 +5,69 @@ on:
     tags:
       - 'v*'
 
-jobs:
-  release:
-    runs-on: [windows-2019, ubuntu-20.04]
+env:
+  LINUX_GNU_TARGET: x86_64-unknown-linux-gnu
+  WINDOWS_GNU_TARGET: x86_64-pc-windows-gnu
 
+# Should run the following steps:
+# Checkout
+# `cargo build` to get both a linux and windows binary
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
+
+      - name: Make APWorld
+        run: |
+          cd ./world
+          ./make_apworld.sh
+
+      - name: Build Linux Binary
+        run: cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
+
+      - name: Build Windows Binary
+        run: cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: APBot Release ${{ github.ref }}
+          draft: true
+          prerelease: true
+      
+      - name: Upload Linux Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/${{ env.LINUX_GNU_TARGET }}/release/apbot
+          asset_name: apbot
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/${{ env.WINDOWS_GNU_TARGET }}/release/apbot.exe
+          asset_name: apbot.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload APWorld
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./world/apbot.apworld
+          asset_name: apbot.apworld
+          asset_content_type: application/zip
