@@ -49,7 +49,7 @@ pub fn spawn_game_playing_task(
 
                     // End the thread :)
                     log::info!("Shutting down gameplay thread");
-                    break;
+                    return;
                 }
                 Err(e) => match e {
                     TryRecvError::Closed => {

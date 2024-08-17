@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use ap_rs::client::ArchipelagoClient;
+use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
 use defs::{Config, FullGameState, GameMap, GoalOneShotData};
 use processes::{
@@ -76,15 +76,6 @@ async fn main() -> Result<()> {
         })
         .ok_or_else(|| anyhow!("No player in server list with name {}", config.slot_name))?;
 
-    client
-        .get(vec![format!("client_status_{team}_{}", config.slot_name)])
-        .await
-        .context("Failed to get my status!")?;
-
-    // Check if we're goaled already, then exit gracefully
-    // get("client_status_{team}_{slot}") // so need `team`
-    // We can wait for the response in the other thread
-
     let this_game_data = client
         .data_package()
         .and_then(|dp| dp.games.get(GAME_NAME))
@@ -110,13 +101,27 @@ async fn main() -> Result<()> {
 
     let game_state = Arc::new(game_state);
 
-    let (client_sender, client_receiver) = client.split();
+    let (mut client_sender, client_receiver) = client.split();
 
     let (goal_tx, goal_rx) = oneshot::channel::<GoalOneShotData>();
 
     // Spawn server listen thread
     let server_handle =
         spawn_ap_server_task(game_state.clone(), client_receiver, config.clone(), goal_tx);
+
+    // Task started, slight delay, then send syncing packets
+    client_sender
+        .send(ap_rs::protocol::ClientMessage::Get(Get {
+            keys: vec![format!("client_status_{team}_{}", config.slot_name)],
+        }))
+        .await
+        .context("Failed to get my status!")?;
+
+    client_sender
+        .send(ap_rs::protocol::ClientMessage::Sync)
+        .await
+        .expect("Could not send sync packet!");
+
     let game_handle =
         spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);
 

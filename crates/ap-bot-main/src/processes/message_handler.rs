@@ -2,7 +2,7 @@ use ap_rs::{
     client::ArchipelagoClientReceiver,
     protocol::{ClientStatus, ServerMessage},
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::defs::{Config, FullGameState, GoalData, GoalOneShotData};
@@ -18,20 +18,32 @@ pub fn spawn_ap_server_task(
             let msg = client.recv().await;
             match msg {
                 Ok(Some(msg)) => {
+                    log::debug!("Got msg: {msg:?}");
                     match msg {
                         ServerMessage::ReceivedItems(items) => {
                             log::debug!("Getting player write lock");
                             let mut player = game_state.player.write().await;
                             log::debug!("Got player write lock");
-                            for item in items.items.iter() {
-                                let id = item.item;
-                                if id < 0 {
-                                    // Special AP item. don't use
-                                    continue;
+
+                            if items.index == 0 {
+                                // What we receive is the ENTIRE inventory when idx == 0
+                                // Set the player's state and return
+                                let new_player_inventory = items.items.into_iter().fold(HashMap::new(), f)
+                            } else {
+                                for item in items.items.iter() {
+                                    let id = item.item;
+
+                                    if id < 0 {
+                                        // Special AP item. don't use
+                                        continue;
+                                    }
+                                    let id = id as u32;
+
+                                    // Append to inventory for now...
+                                    // Incremental indicies are not working well here
+                                    let entry = player.inventory.entry(id).or_insert(0);
+                                    *entry += 1;
                                 }
-                                let id = id as u32;
-                                let entry = player.inventory.entry(id).or_insert(0);
-                                *entry += 1;
                             }
 
                             let player = player.downgrade();
@@ -52,6 +64,12 @@ pub fn spawn_ap_server_task(
                                 log::info!("Server listening thread shutting down");
                                 return;
                             }
+
+                            game_state
+                                .write_save_file()
+                                .await
+                                .inspect_err(|e| log::error!("Unable to write save file: {e}"))
+                                .ok();
                         }
                         ServerMessage::Retrieved(retrieved) => {
                             for (key, val) in retrieved.keys.iter() {
