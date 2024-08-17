@@ -7,14 +7,15 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::defs::{Config, FullGameState, GoalOneShotData};
+use crate::defs::{FullGameState, GoalOneShotData, OutputFileConfig};
 
 pub fn spawn_game_playing_task(
     game_state: Arc<FullGameState>,
     mut sender: ArchipelagoClientSender,
-    config: Config,
+    config: OutputFileConfig,
     mut goal_rx: oneshot::Receiver<GoalOneShotData>,
 ) -> JoinHandle<()> {
+    println!("Searching for items...");
     tokio::spawn(async move {
         let max_wait_time = config.max_wait_time;
         let min_wait_time = config.min_wait_time;
@@ -34,12 +35,13 @@ pub fn spawn_game_playing_task(
                         .await
                         .unwrap();
 
-                    sender.say("gg <3").await.unwrap();
+                    sender.say("gg <3").await.ok();
 
                     // Check if we need to manually release
                     match data.room_info.permissions.release {
                         Permission::Enabled | Permission::Goal => {
                             log::info!("Releasing items...");
+                            println!("Releasing items...");
                             sender.say("!release").await.unwrap();
                         }
                         _ => {
@@ -52,11 +54,11 @@ pub fn spawn_game_playing_task(
                     return;
                 }
                 Err(e) => match e {
-                    TryRecvError::Closed => {
-                        panic!("GOAL oneshot is poisoned!");
-                    }
                     TryRecvError::Empty => {
                         // All good, we just haven't goaled yet.
+                    }
+                    TryRecvError::Closed => {
+                        panic!("GOAL oneshot is poisoned!");
                     }
                 },
             };
@@ -66,12 +68,13 @@ pub fn spawn_game_playing_task(
 
             match location_checked {
                 None => {
-                    // BKd!
-                    log::warn!("I'm BKd!!!");
-                    // log::debug!("{game_state:?}");
+                    // BK'd!
+                    log::warn!("I'm BK'd!!!");
+                    println!("Currently in BK mode!");
                 }
                 Some(loc_id) => {
-                    // Send a checked location packet!!! 🚀
+                    // Found an item!
+                    println!("Found item ID: {loc_id}");
                     match sender.location_checks(vec![loc_id as i32]).await {
                         Ok(_) => {}
                         Err(e) => {

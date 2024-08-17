@@ -6,13 +6,14 @@ use std::{
     vec,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
-use defs::{Config, FullGameState, GameMap, GoalOneShotData};
+use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
+use rfd::FileDialog;
 use tokio::sync::oneshot;
 
 mod defs;
@@ -21,7 +22,7 @@ mod processes;
 #[derive(Parser)]
 struct Args {
     #[clap()]
-    config_file: PathBuf,
+    output_file: Option<PathBuf>,
 
     #[clap(long, short, env)]
     slot_name: Option<String>,
@@ -38,6 +39,22 @@ pub const ITEM_HANDLING: i32 = 0b111;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let main_result = outer_main().await;
+
+    match main_result {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log::error!("{e}");
+            println!("{e}");
+            get_user_input("Press Enter to exit...")?;
+            bail!(e)
+        }
+    }
+}
+
+// This is our primary `main` function, but to allow for easy error handling and logging, we have
+// the actual main function call this one.
+async fn outer_main() -> Result<()> {
     dotenvy::dotenv().ok();
     env_logger::init();
 
@@ -46,14 +63,6 @@ async fn main() -> Result<()> {
     let addr = args
         .server_addr
         .unwrap_or_else(|| get_user_input("Enter server ip and port:").unwrap());
-    let mut client =
-        ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
-
-    // Load config file
-    let config = fs::read_to_string(&args.config_file)
-        .and_then(|file_s| serde_json::from_str::<Config>(&file_s).map_err(Into::into))?;
-
-    log::info!("Loaded config {}", args.config_file.display());
 
     let password = args
         .password
@@ -62,6 +71,11 @@ async fn main() -> Result<()> {
     let slot_name = args
         .slot_name
         .unwrap_or_else(|| get_user_input("Enter slot name:").unwrap());
+
+    let mut client =
+        ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
+
+    let config = load_output_file(args.output_file)?;
 
     let connected_packet = client
         .connect(
@@ -131,7 +145,7 @@ async fn main() -> Result<()> {
     client_sender
         .send(ap_rs::protocol::ClientMessage::Sync)
         .await
-        .expect("Could not send sync packet!");
+        .context("Could not send sync packet!")?;
 
     let game_handle =
         spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);
@@ -140,6 +154,20 @@ async fn main() -> Result<()> {
     game_handle.await.unwrap();
 
     Ok(())
+}
+
+fn load_output_file(path: Option<PathBuf>) -> Result<OutputFileConfig> {
+    let path = path
+        .or_else(|| {
+            FileDialog::new()
+                .set_title("Select the output file for this seed")
+                .add_filter("APBot Output File", &["json"])
+                .pick_file()
+        })
+        .ok_or_else(|| anyhow!("Could not find an output file for this seed!"))?;
+
+    Ok(fs::read_to_string(&path)
+        .and_then(|file_s| Ok(serde_json::from_str::<OutputFileConfig>(&file_s)?))?)
 }
 
 fn get_user_input(prompt: &str) -> Result<String> {

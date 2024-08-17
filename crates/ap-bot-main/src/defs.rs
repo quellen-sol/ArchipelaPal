@@ -108,7 +108,7 @@ impl FullGameState {
     pub async fn write_save_file(&self) -> Result<()> {
         let player_copy = self.player.read().await.clone();
         let map_copy = self.map.read().await.clone();
-        let last_checked_idx = self.last_checked_idx.read().await.clone();
+        let last_checked_idx = *self.last_checked_idx.read().await;
 
         let save_file = SaveFile {
             player: player_copy,
@@ -166,7 +166,7 @@ impl From<SaveFile> for FullGameState {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct Config {
+pub struct OutputFileConfig {
     pub min_wait_time: u16,
     pub max_wait_time: u16,
     pub num_goal: u16,

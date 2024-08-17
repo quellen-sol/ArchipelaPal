@@ -5,14 +5,15 @@ use ap_rs::{
 use std::{collections::HashMap, sync::Arc};
 use tokio::{sync::oneshot, task::JoinHandle};
 
-use crate::defs::{Config, FullGameState, GoalData, GoalOneShotData};
+use crate::defs::{FullGameState, GoalData, GoalOneShotData, OutputFileConfig};
 
 pub fn spawn_ap_server_task(
     game_state: Arc<FullGameState>,
     mut client: ArchipelagoClientReceiver,
-    config: Config,
+    config: OutputFileConfig,
     goal_tx: oneshot::Sender<GoalOneShotData>,
 ) -> JoinHandle<()> {
+    println!("Now listening for AP server messages");
     tokio::spawn(async move {
         loop {
             let msg = client.recv().await;
