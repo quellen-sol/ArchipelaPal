@@ -22,6 +22,7 @@ pub struct FullGameState {
     pub map: Arc<RwLock<GameMap>>,
     pub seed_name: String,
     pub team: i32,
+    pub last_checked_idx: Arc<RwLock<i32>>,
 }
 
 impl FullGameState {
@@ -107,12 +108,14 @@ impl FullGameState {
     pub async fn write_save_file(&self) -> Result<()> {
         let player_copy = self.player.read().await.clone();
         let map_copy = self.map.read().await.clone();
+        let last_checked_idx = self.last_checked_idx.read().await.clone();
 
         let save_file = SaveFile {
             player: player_copy,
             map: map_copy,
             seed: self.seed_name.clone(),
             team: self.team,
+            last_checked_idx,
         };
 
         let savefile_json = serde_json::to_string(&save_file)?;
@@ -143,18 +146,21 @@ pub struct SaveFile {
     map: GameMap,
     seed: String,
     team: i32,
+    last_checked_idx: i32,
 }
 
 impl From<SaveFile> for FullGameState {
     fn from(value: SaveFile) -> Self {
         let player = Arc::new(RwLock::new(value.player));
         let map = Arc::new(RwLock::new(value.map));
+        let last_checked_idx = Arc::new(RwLock::new(value.last_checked_idx));
 
         Self {
             map,
             player,
             seed_name: value.seed,
             team: value.team,
+            last_checked_idx,
         }
     }
 }

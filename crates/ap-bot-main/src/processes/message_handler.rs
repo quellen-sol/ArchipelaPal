@@ -21,10 +21,8 @@ pub fn spawn_ap_server_task(
                     log::debug!("Got msg: {msg:?}");
                     match msg {
                         ServerMessage::ReceivedItems(items) => {
-                            log::debug!("Getting player write lock");
                             let mut player = game_state.player.write().await;
-                            log::debug!("Got player write lock");
-
+                            let last_idx = game_state.last_checked_idx.read().await;
                             if items.index == 0 {
                                 // What we receive is the ENTIRE inventory when idx == 0
                                 // Set the player's state and return
@@ -38,12 +36,12 @@ pub fn spawn_ap_server_task(
                                         let amt = acc.entry(id).or_insert(0);
                                         *amt += 1;
 
-                                        return acc;
+                                        acc
                                     },
                                 );
 
                                 player.inventory = new_player_inventory;
-                            } else {
+                            } else if items.index > *last_idx {
                                 for item in items.items.iter() {
                                     let id = item.item;
 
@@ -58,6 +56,12 @@ pub fn spawn_ap_server_task(
                                     let entry = player.inventory.entry(id).or_insert(0);
                                     *entry += 1;
                                 }
+
+                                // Drop read lock to get a write
+                                drop(last_idx);
+
+                                let mut last_idx_write = game_state.last_checked_idx.write().await;
+                                *last_idx_write = items.index;
                             }
 
                             let player = player.downgrade();
@@ -117,7 +121,7 @@ pub fn spawn_ap_server_task(
                             }
                         }
                         _ => {
-                            // Supporting other packet types in the future
+                            // Supporting other packet types as needed
                             continue;
                         }
                     }
