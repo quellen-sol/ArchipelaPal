@@ -48,8 +48,8 @@ class APBot(World):
         min_chests_per_region = self.options.min_chests_per_region
         max_chests_per_region = self.options.max_chests_per_region
 
-        min_time = self.options.min_time_between_checks;
-        max_time = self.options.max_time_between_checks;
+        min_time = self.options.min_time_between_checks
+        max_time = self.options.max_time_between_checks
 
         num_goal_items = self.options.num_goal_items
 
@@ -76,7 +76,7 @@ class APBot(World):
         HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
         starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
-        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID;
+        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID
 
         total_junk_items = 0
         for region_num in range(num_regions):
