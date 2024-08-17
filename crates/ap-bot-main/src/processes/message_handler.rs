@@ -52,7 +52,6 @@ pub fn spawn_ap_server_task(
                                     let id = id as u32;
 
                                     // Append to inventory for now...
-                                    // Incremental indicies are not working well here
                                     let entry = player.inventory.entry(id).or_insert(0);
                                     *entry += 1;
                                 }
