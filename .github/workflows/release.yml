@@ -31,7 +31,7 @@ jobs:
           rustup target add ${{ env.WINDOWS_GNU_TARGET }}
 
           sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64
+          sudo apt-get install -y gcc-mingw-w64-x86-64 gcc
 
       - name: Build Linux Binary
         run: cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
