@@ -2,5 +2,4 @@
 
 cd ~/Archipelago/output
 
-APFILE=$(ls -t | grep '.archipelago' | head -n1)
-../ArchipelagoServer $APFILE
+../ArchipelagoServer $(ls -t | grep '.archipelago' | head -n1)
