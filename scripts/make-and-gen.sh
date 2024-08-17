@@ -2,6 +2,8 @@
 
 set -e
 
+START_DIR=$(pwd)
+
 cd ../world
 ./make_apworld.sh
 mv apbot.apworld ~/Archipelago/lib/worlds/
@@ -19,5 +21,8 @@ cd ~/Archipelago/output
 # Unzip the latest .zip file in this directory, not in it's own folder
 unzip $(ls -t | grep '.zip' | head -n1) -d .
 
-# rm the .zip file
-rm $(ls -t | grep '.zip' | head -n1)
+# Move all ".json" files to `../`
+mv *.json $START_DIR/../
+
+# rm all .zip files
+rm *.zip

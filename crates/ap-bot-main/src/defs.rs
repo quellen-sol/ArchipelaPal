@@ -159,7 +159,7 @@ impl From<SaveFile> for FullGameState {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Config {
     pub min_wait_time: u16,
     pub max_wait_time: u16,

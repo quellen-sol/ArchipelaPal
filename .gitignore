@@ -2,3 +2,4 @@ target/
 *.apworld
 .env
 save-file-*.json
+AP_*.json

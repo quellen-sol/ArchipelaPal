@@ -1,3 +1,4 @@
+import os, json
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
 from .Items import APBotItem
@@ -156,3 +157,20 @@ class APBot(World):
     def create_item(self, name: str) -> APBotItem:
         item = self.item_table[name]
         return APBotItem(name, item.classification, item.code, self.player)
+
+    def generate_output(self, output_dir: str) -> None:
+        min_wait_time = self.options.min_time_between_checks.value
+        max_wait_time = self.options.max_time_between_checks.value
+        num_goal = self.options.num_goal_items.value
+        slot_name = self.player_name
+
+        # Create the output file
+        base_out_name = self.multiworld.get_out_file_name_base(self.player)
+        out_file = os.path.join(output_dir, f"{base_out_name}.json")
+        with open(out_file, "w") as f:
+            json.dump({
+                "min_wait_time": min_wait_time,
+                "max_wait_time": max_wait_time,
+                "num_goal": num_goal,
+                "slot_name": slot_name,
+            }, f)

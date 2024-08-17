@@ -1,5 +1,7 @@
 use std::{
+    fs,
     io::{stdin, stdout, Write},
+    path::PathBuf,
     sync::Arc,
     vec,
 };
@@ -18,14 +20,17 @@ mod processes;
 
 #[derive(Parser)]
 struct Args {
-    #[clap(env)]
-    password: String,
+    #[clap()]
+    config_file: PathBuf,
 
-    #[clap(env)]
-    slot_name: String,
+    #[clap(long, short, env)]
+    slot_name: Option<String>,
 
-    #[clap(env)]
+    #[clap(long, short = 'a', env)]
     server_addr: Option<String>,
+
+    #[clap(long, short, env)]
+    password: Option<String>,
 }
 
 pub const GAME_NAME: &str = "APBot";
@@ -44,19 +49,25 @@ async fn main() -> Result<()> {
     let mut client =
         ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
 
-    // TODO: Get this from output!
-    let config = Config {
-        min_wait_time: 5,
-        max_wait_time: 30,
-        num_goal: 10,
-        slot_name: "TestUser".into(),
-    };
+    // Load config file
+    let config = fs::read_to_string(&args.config_file)
+        .and_then(|file_s| serde_json::from_str::<Config>(&file_s).map_err(Into::into))?;
+
+    log::info!("Loaded config {}", args.config_file.display());
+
+    let password = args
+        .password
+        .unwrap_or_else(|| get_user_input("Enter server password (Press Enter if none):").unwrap());
+
+    let slot_name = args
+        .slot_name
+        .unwrap_or_else(|| get_user_input("Enter slot name:").unwrap());
 
     let connected_packet = client
         .connect(
             GAME_NAME,
-            &args.slot_name,
-            Some(&args.password),
+            &slot_name,
+            Some(&password),
             Some(ITEM_HANDLING), // ?
             vec!["AP".into(), "Bot".into()],
         )
