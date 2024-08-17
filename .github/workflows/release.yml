@@ -34,11 +34,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-mingw-w64-x86-64 gcc
 
-      - name: Build Linux Binary
-        run: cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
+      - name: Build Linux Binary and Zip
+        run: |
+          cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
+          zip -j ap-bot-${{ env.LINUX_GNU_TARGET }}.zip ./target/${{ env.LINUX_GNU_TARGET }}/release/ap-bot
 
-      - name: Build Windows Binary
-        run: cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
+      - name: Build Windows Binary and Zip
+        run: |
+          cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
+          zip -j ap-bot-${{ env.WINDOWS_GNU_TARGET }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ap-bot.exe
 
       - name: Debug
         run: ls ./target
@@ -60,9 +64,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/${{ env.LINUX_GNU_TARGET }}/release/apbot
-          asset_name: apbot
-          asset_content_type: application/octet-stream
+          asset_path: ./ap-bot-${{ env.LINUX_GNU_TARGET }}.zip
+          asset_name: ap-bot-${{ env.LINUX_GNU_TARGET }}.zip
+          asset_content_type: application/zip
 
       - name: Upload Windows Asset
         uses: actions/upload-release-asset@v1
@@ -70,9 +74,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/${{ env.WINDOWS_GNU_TARGET }}/release/apbot.exe
-          asset_name: apbot.exe
-          asset_content_type: application/octet-stream
+          asset_path: ./ap-bot-${{ env.WINDOWS_GNU_TARGET }}.zip
+          asset_name: ap-bot-${{ env.WINDOWS_GNU_TARGET }}.zip
+          asset_content_type: application/zip
 
       - name: Upload APWorld
         uses: actions/upload-release-asset@v1
