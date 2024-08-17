@@ -150,8 +150,10 @@ async fn outer_main() -> Result<()> {
     let game_handle =
         spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);
 
-    server_handle.await.unwrap();
-    game_handle.await.unwrap();
+    let (sh_joined, gh_joined) = tokio::join!(server_handle, game_handle);
+
+    sh_joined.context("Server thread panicked")?;
+    gh_joined.context("Game thread panicked")?;
 
     Ok(())
 }
