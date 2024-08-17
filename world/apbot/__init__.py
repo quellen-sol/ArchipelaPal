@@ -56,10 +56,10 @@ class APBot(World):
         min_expected_chests = num_regions * min_chests_per_region + 1 # +1 for the starting chest
 
         if min_chests_per_region > max_chests_per_region:
-            raise APBotError("min_chests_per_region must be less than or equal to max_chests_per_region")
+            raise APBotError(f"min_chests_per_region ({min_chests_per_region}) must be less than or equal to max_chests_per_region ({max_chests_per_region})")
 
         if min_time > max_time:
-            raise APBotError("min_time_between_checks must be less than or equal to max_time_between_checks")
+            raise APBotError(f"min_time_between_checks ({min_time}) must be less than or equal to max_time_between_checks ({max_time})")
 
         if num_goal_items > min_expected_chests:
             raise APBotError(f"num_goal_items ({num_goal_items}) must be less than or equal to the minimum expected number of chests ({min_expected_chests})")
