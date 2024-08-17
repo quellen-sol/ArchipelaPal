@@ -1,4 +1,7 @@
-use ap_rs::{client::ArchipelagoClientReceiver, protocol::ServerMessage};
+use ap_rs::{
+    client::ArchipelagoClientReceiver,
+    protocol::{ClientStatus, ServerMessage},
+};
 use std::sync::Arc;
 use tokio::{sync::oneshot, task::JoinHandle};
 
@@ -47,10 +50,40 @@ pub fn spawn_ap_server_task(
 
                                 // Need to more gracefully shutdown
                                 log::info!("Server listening thread shutting down");
-                                break;
+                                return;
                             }
                         }
+                        ServerMessage::Retrieved(retrieved) => {
+                            for (key, val) in retrieved.keys.iter() {
+                                if !key.starts_with("client_status") {
+                                    continue;
+                                }
 
+                                if !key.ends_with(&config.slot_name) {
+                                    continue;
+                                }
+
+                                if val.is_null() {
+                                    continue;
+                                }
+
+                                let status: Option<ClientStatus> = val
+                                    .as_number()
+                                    .and_then(|n| n.as_u64())
+                                    .map(|n64| (n64 as u16).into());
+
+                                if let Some(ClientStatus::ClientGoal) = status {
+                                    let data = GoalData {
+                                        room_info: client.room_info().clone(),
+                                    };
+                                    goal_tx.send(data).unwrap();
+
+                                    // Need to more gracefully shutdown
+                                    log::info!("Server listening thread shutting down");
+                                    return;
+                                }
+                            }
+                        }
                         _ => {
                             // Supporting other packet types in the future
                             continue;

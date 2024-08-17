@@ -21,6 +21,7 @@ pub struct FullGameState {
     pub player: Arc<RwLock<Player>>,
     pub map: Arc<RwLock<GameMap>>,
     pub seed_name: String,
+    pub team: i32,
 }
 
 impl FullGameState {
@@ -111,6 +112,7 @@ impl FullGameState {
             player: player_copy,
             map: map_copy,
             seed: self.seed_name.clone(),
+            team: self.team,
         };
 
         let savefile_json = serde_json::to_string(&save_file)?;
@@ -140,6 +142,7 @@ pub struct SaveFile {
     player: Player,
     map: GameMap,
     seed: String,
+    team: i32,
 }
 
 impl From<SaveFile> for FullGameState {
@@ -151,6 +154,7 @@ impl From<SaveFile> for FullGameState {
             map,
             player,
             seed_name: value.seed,
+            team: value.team,
         }
     }
 }
@@ -160,6 +164,7 @@ pub struct Config {
     pub min_wait_time: u16,
     pub max_wait_time: u16,
     pub num_goal: u16,
+    pub slot_name: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

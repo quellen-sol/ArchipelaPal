@@ -4,7 +4,7 @@ use std::{
     vec,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use ap_rs::client::ArchipelagoClient;
 use clap::Parser;
 use defs::{Config, FullGameState, GameMap, GoalOneShotData};
@@ -44,7 +44,15 @@ async fn main() -> Result<()> {
     let mut client =
         ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
 
-    let _ = client
+    // TODO: Get this from output!
+    let config = Config {
+        min_wait_time: 5,
+        max_wait_time: 30,
+        num_goal: 10,
+        slot_name: "TestUser".into(),
+    };
+
+    let connected_packet = client
         .connect(
             GAME_NAME,
             &args.slot_name,
@@ -55,6 +63,27 @@ async fn main() -> Result<()> {
         .await?;
 
     log::info!("Connected");
+
+    let team = connected_packet
+        .players
+        .iter()
+        .find_map(|p| {
+            if p.name == config.slot_name {
+                Some(p.team)
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| anyhow!("No player in server list with name {}", config.slot_name))?;
+
+    client
+        .get(vec![format!("client_status_{team}_{}", config.slot_name)])
+        .await
+        .context("Failed to get my status!")?;
+
+    // Check if we're goaled already, then exit gracefully
+    // get("client_status_{team}_{slot}") // so need `team`
+    // We can wait for the response in the other thread
 
     let this_game_data = client
         .data_package()
@@ -76,18 +105,12 @@ async fn main() -> Result<()> {
         drop(map_lock);
 
         game_state.seed_name = info.seed_name.clone();
+        game_state.team = team;
     }
 
     let game_state = Arc::new(game_state);
 
     let (client_sender, client_receiver) = client.split();
-
-    // TODO: Get this from output!
-    let config = Config {
-        min_wait_time: 5,
-        max_wait_time: 30,
-        num_goal: 10,
-    };
 
     let (goal_tx, goal_rx) = oneshot::channel::<GoalOneShotData>();
 
