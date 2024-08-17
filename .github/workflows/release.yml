@@ -37,12 +37,12 @@ jobs:
       - name: Build Linux Binary and Zip
         run: |
           cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
-          zip -j ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref }}.zip ./target/${{ env.LINUX_GNU_TARGET }}/release/ap-bot
+          zip -j ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.LINUX_GNU_TARGET }}/release/ap-bot
 
       - name: Build Windows Binary and Zip
         run: |
           cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
-          zip -j ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ap-bot.exe
+          zip -j ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ap-bot.exe
 
       - name: Debug
         run: ls ./target
@@ -64,8 +64,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref }}.zip
-          asset_name: ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref }}.zip
+          asset_path: ./ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_name: ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload Windows Asset
@@ -74,8 +74,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref }}.zip
-          asset_name: ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref }}.zip
+          asset_path: ./ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_name: ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload APWorld
