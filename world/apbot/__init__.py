@@ -1,6 +1,7 @@
 import os, json
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
+from .Errors import APBotError
 from .Items import APBotItem
 from .Locations import APBotLocation
 from .Options import APBotOptions
@@ -47,8 +48,21 @@ class APBot(World):
         min_chests_per_region = self.options.min_chests_per_region
         max_chests_per_region = self.options.max_chests_per_region
 
+        min_time = self.options.min_time_between_checks
+        max_time = self.options.max_time_between_checks
+
+        num_goal_items = self.options.num_goal_items
+
+        min_expected_chests = num_regions * min_chests_per_region + 1 # +1 for the starting chest
+
         if min_chests_per_region > max_chests_per_region:
-            raise ValueError("min_chests_per_region must be less than or equal to max_chests_per_region")
+            raise APBotError(f"min_chests_per_region ({min_chests_per_region}) must be less than or equal to max_chests_per_region ({max_chests_per_region})")
+
+        if min_time > max_time:
+            raise APBotError(f"min_time_between_checks ({min_time}) must be less than or equal to max_time_between_checks ({max_time})")
+
+        if num_goal_items > min_expected_chests:
+            raise APBotError(f"num_goal_items ({num_goal_items}) must be less than or equal to the minimum expected number of chests ({min_expected_chests})")
 
         itempool = []
 
@@ -62,7 +76,7 @@ class APBot(World):
         HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
         starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
-        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID;
+        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID
 
         total_junk_items = 0
         for region_num in range(num_regions):
@@ -112,12 +126,12 @@ class APBot(World):
             "code": GOAL_ITEM_OFFSET,
         }
         self.item_name_to_id[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
-        for goal_num in range(self.options.num_goal_items):
+        for goal_num in range(num_goal_items):
             itempool.append(goal_item)
         
         # Add completion goal
         self.multiworld.completion_condition[self.player] = lambda state: state.has_all_counts({
-            GOAL_ITEM_NAME: self.options.num_goal_items,
+            GOAL_ITEM_NAME: num_goal_items,
         }, self.player)
 
         # Add Junk items
@@ -127,7 +141,7 @@ class APBot(World):
         }
         self.item_name_to_id[JUNK_ITEM_NAME] = JUNK_CODE_OFFSET
         junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_CODE_OFFSET, self.player)
-        for junk_num in range(total_junk_items - self.options.num_goal_items):
+        for junk_num in range(total_junk_items - num_goal_items):
             itempool.append(junk_item)
 
         self.multiworld.regions.append(menu)
