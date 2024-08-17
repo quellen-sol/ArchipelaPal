@@ -25,6 +25,14 @@ jobs:
           cd ./world
           ./make_apworld.sh
 
+      - name: Setup Targets
+        run: |
+          rustup target add ${{ env.LINUX_GNU_TARGET }}
+          rustup target add ${{ env.WINDOWS_GNU_TARGET }}
+
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
       - name: Build Linux Binary
         run: cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
 
