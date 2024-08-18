@@ -1,6 +1,6 @@
 name: ExampleUser
 game: APBot
-description: This is an example YAML that genrates between 50-100 chests with 10 goal items, and therefore 40-90 junk items
+description: This is an example YAML that genrates between 100-200 chests with 20 goal items, and therefore 80-180 junk items
 
 APBot:
   # Number of regions to generate, and number of chests per region
