@@ -1,11 +1,10 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use ap_rs::{
     client::ArchipelagoClientReceiver,
     protocol::{ClientStatus, Hint, HintData, ServerMessage},
 };
 use std::{
     collections::{HashMap, HashSet},
-    hint,
     sync::Arc,
 };
 use tokio::{sync::oneshot, task::JoinHandle};
@@ -96,8 +95,8 @@ pub fn spawn_ap_server_task(
                         }
                         ServerMessage::Retrieved(retrieved) => {
                             for (key, val) in retrieved.keys.iter() {
-                                if key.starts_with("client_status") {
-                                    if !key.ends_with(&config.slot_name) {
+                                if key.starts_with("_read_client_status") {
+                                    if !key.ends_with(&game_state.slot_id.to_string()) {
                                         continue;
                                     }
 
@@ -122,7 +121,7 @@ pub fn spawn_ap_server_task(
                                     } else {
                                         log::error!("Unexpected client status: {status:?}");
                                     }
-                                } else if key.starts_with("hints_") {
+                                } else if key.starts_with("_read_hints_") {
                                     if val.is_null() {
                                         continue;
                                     }

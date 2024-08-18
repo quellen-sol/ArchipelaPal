@@ -64,7 +64,7 @@ impl FullGameState {
                         .iter_mut()
                         .find(|chest| chest.full_id == hint_loc as LocationID)
                 })
-                .expect(&format!("Chest {hint_loc} should exist in game map"));
+                .unwrap_or_else(|| panic!("Chest {hint_loc} should exist in game map"));
             if !chest.checked {
                 chest.checked = true;
                 return Some(hint_loc as LocationID);
