@@ -1,6 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
-use ap_rs::{client::ArchipelagoClientSender, protocol::Permission};
+use ap_rs::{
+    client::ArchipelagoClientSender,
+    protocol::{Get, Permission},
+};
 use rand::{thread_rng, Rng};
 use tokio::{
     sync::oneshot::{self, error::TryRecvError},
@@ -75,14 +78,28 @@ pub fn spawn_game_playing_task(
                 Some(loc_id) => {
                     // Found an item!
                     println!("Found item ID: {loc_id}");
-                    match sender.location_checks(vec![loc_id as i32]).await {
-                        Ok(_) => {}
+                    let loc_id = loc_id as i32;
+                    match sender.location_checks(vec![loc_id]).await {
+                        Ok(_) => {
+                            // Remove from hint queue
+                            let mut source_hint_queue = game_state.source_hint_queue.write().await;
+                            source_hint_queue.retain(|hint| hint.item.location != loc_id);
+                        }
                         Err(e) => {
                             log::error!("{e}");
                         }
                     };
                 }
             }
+
+            let hint_get_key = game_state.make_hints_get_key(game_state.slot_id);
+
+            sender
+                .send(ap_rs::protocol::ClientMessage::Get(Get {
+                    keys: vec![hint_get_key],
+                }))
+                .await
+                .ok();
         }
     })
 }

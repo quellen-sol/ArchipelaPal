@@ -1,10 +1,15 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use anyhow::Result;
-use ap_rs::protocol::RoomInfo;
+use ap_rs::protocol::{HintData, RoomInfo};
 use rand::{seq::IteratorRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock};
+
+pub const SAVE_FILE_DIRECTORY: &str = "Saves";
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -23,16 +28,50 @@ pub struct FullGameState {
     pub seed_name: String,
     pub team: i32,
     pub last_checked_idx: Arc<RwLock<i32>>,
+    pub slot_id: i32,
+    /// A queue of hints that we are currently searching for in OUR world
+    pub source_hint_queue: Arc<RwLock<HashSet<HintData>>>,
 }
 
 impl FullGameState {
     /// Returns a checked location's ID, if we check one
     pub async fn tick_game_state(&self) -> Option<LocationID> {
         let player = self.player.read().await;
-        let map = self.map.read().await;
         let player_region_keys = player.get_key_info();
         log::debug!("Region keys: {:?}", player_region_keys);
 
+        // Check if we can get something from the hint list first
+        let source_hint_queue = self.source_hint_queue.read().await;
+        let hint_item = source_hint_queue.iter().find_map(|hint| {
+            let loc_id = hint.item.location;
+            let loc_id_bytes = loc_id.to_le_bytes();
+            let region = loc_id_bytes[1];
+            if player_region_keys.contains(&region) {
+                return Some(hint.item.location);
+            }
+
+            None
+        });
+
+        if let Some(hint_loc) = hint_item {
+            let region = hint_loc.to_le_bytes()[1];
+            let mut map = self.map.write().await;
+            let chest = map
+                .map
+                .get_mut(&region)
+                .and_then(|chests| {
+                    chests
+                        .iter_mut()
+                        .find(|chest| chest.full_id == hint_loc as LocationID)
+                })
+                .expect(&format!("Chest {hint_loc} should exist in game map"));
+            if !chest.checked {
+                chest.checked = true;
+                return Some(hint_loc as LocationID);
+            }
+        }
+
+        let map = self.map.read().await;
         let search_region = player.currently_exploring_region;
         let initial_chest = Self::choose_chest_in_region(&map, &search_region);
 
@@ -109,6 +148,7 @@ impl FullGameState {
         let player_copy = self.player.read().await.clone();
         let map_copy = self.map.read().await.clone();
         let last_checked_idx = *self.last_checked_idx.read().await;
+        let source_hint_queue = self.source_hint_queue.read().await.clone();
 
         let save_file = SaveFile {
             player: player_copy,
@@ -116,6 +156,8 @@ impl FullGameState {
             seed: self.seed_name.clone(),
             team: self.team,
             last_checked_idx,
+            slot_id: self.slot_id,
+            source_hint_queue,
         };
 
         let savefile_json = serde_json::to_string(&save_file)?;
@@ -136,7 +178,12 @@ impl FullGameState {
     }
 
     fn make_save_file_name(seed_name: &str) -> String {
-        format!("SaveFiles/save-file-{seed_name}.json")
+        format!("{SAVE_FILE_DIRECTORY}/save-file-{seed_name}.json")
+    }
+
+    pub fn make_hints_get_key(&self, slot_id: i32) -> String {
+        let team = self.team;
+        format!("_read_hints_{team}_{slot_id}")
     }
 }
 
@@ -147,6 +194,8 @@ pub struct SaveFile {
     seed: String,
     team: i32,
     last_checked_idx: i32,
+    slot_id: i32,
+    source_hint_queue: HashSet<HintData>,
 }
 
 impl From<SaveFile> for FullGameState {
@@ -154,6 +203,7 @@ impl From<SaveFile> for FullGameState {
         let player = Arc::new(RwLock::new(value.player));
         let map = Arc::new(RwLock::new(value.map));
         let last_checked_idx = Arc::new(RwLock::new(value.last_checked_idx));
+        let source_hint_queue = Arc::new(RwLock::new(value.source_hint_queue));
 
         Self {
             map,
@@ -161,6 +211,8 @@ impl From<SaveFile> for FullGameState {
             seed_name: value.seed,
             team: value.team,
             last_checked_idx,
+            slot_id: value.slot_id,
+            source_hint_queue,
         }
     }
 }

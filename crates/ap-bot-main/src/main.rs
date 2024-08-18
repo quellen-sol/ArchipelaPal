@@ -9,7 +9,7 @@ use std::{
 use anyhow::{anyhow, bail, Context, Result};
 use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
-use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig};
+use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
@@ -23,9 +23,6 @@ mod processes;
 struct Args {
     #[clap()]
     output_file: Option<PathBuf>,
-
-    #[clap(long, short, env)]
-    slot_name: Option<String>,
 
     #[clap(long, short = 'a', env)]
     server_addr: Option<String>,
@@ -73,7 +70,7 @@ async fn outer_main() -> Result<()> {
 
     let config = load_output_file(args.output_file)?;
 
-    let slot_name = args.slot_name.unwrap_or(config.slot_name.clone());
+    let slot_name = config.slot_name.clone();
 
     let connected_packet = client
         .connect(
@@ -87,18 +84,6 @@ async fn outer_main() -> Result<()> {
 
     log::info!("Connected");
 
-    let team = connected_packet
-        .players
-        .iter()
-        .find_map(|p| {
-            if p.name == slot_name {
-                Some(p.team)
-            } else {
-                None
-            }
-        })
-        .ok_or_else(|| anyhow!("No player in server list with name {}", slot_name))?;
-
     let this_game_data = client
         .data_package()
         .and_then(|dp| dp.games.get(GAME_NAME))
@@ -107,7 +92,13 @@ async fn outer_main() -> Result<()> {
     let info = client.room_info();
     log::info!("Seed: {}", info.seed_name);
 
+    // Make 'Saves' directory if it doesn't exist
+    fs::create_dir_all(SAVE_FILE_DIRECTORY).context("Could not create 'Saves' directory")?;
+
     let mut game_state = FullGameState::from_file_or_default(&info.seed_name);
+
+    let slot_id = connected_packet.slot;
+    let team = connected_packet.team;
 
     // Correct the game state if it ended up being a default
     if game_state.seed_name.is_empty() {
@@ -118,8 +109,10 @@ async fn outer_main() -> Result<()> {
         *map_lock = game_map;
         drop(map_lock);
 
+        // GAME STATE FIRST TIME CREATION
         game_state.seed_name = info.seed_name.clone();
         game_state.team = team;
+        game_state.slot_id = slot_id;
     }
 
     let game_state = Arc::new(game_state);
@@ -135,7 +128,10 @@ async fn outer_main() -> Result<()> {
     // Task started, slight delay, then send syncing packets
     client_sender
         .send(ap_rs::protocol::ClientMessage::Get(Get {
-            keys: vec![format!("client_status_{team}_{}", slot_name)],
+            keys: vec![
+                format!("_read_client_status_{team}_{slot_id}"),
+                game_state.make_hints_get_key(slot_id),
+            ],
         }))
         .await
         .context("Failed to get my status!")?;
@@ -150,8 +146,8 @@ async fn outer_main() -> Result<()> {
 
     let (sh_joined, gh_joined) = tokio::join!(server_handle, game_handle);
 
-    sh_joined.context("Server thread panicked")?;
-    gh_joined.context("Game thread panicked")?;
+    sh_joined?;
+    gh_joined?;
 
     Ok(())
 }

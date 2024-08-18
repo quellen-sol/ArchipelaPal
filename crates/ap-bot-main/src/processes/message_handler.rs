@@ -1,8 +1,13 @@
+use anyhow::{anyhow, Result};
 use ap_rs::{
     client::ArchipelagoClientReceiver,
-    protocol::{ClientStatus, ServerMessage},
+    protocol::{ClientStatus, Hint, HintData, ServerMessage},
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    hint,
+    sync::Arc,
+};
 use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::defs::{FullGameState, GoalData, GoalOneShotData, OutputFileConfig};
@@ -91,33 +96,84 @@ pub fn spawn_ap_server_task(
                         }
                         ServerMessage::Retrieved(retrieved) => {
                             for (key, val) in retrieved.keys.iter() {
-                                if !key.starts_with("client_status") {
-                                    continue;
-                                }
+                                if key.starts_with("client_status") {
+                                    if !key.ends_with(&config.slot_name) {
+                                        continue;
+                                    }
 
-                                if !key.ends_with(&config.slot_name) {
-                                    continue;
-                                }
+                                    if val.is_null() {
+                                        continue;
+                                    }
 
-                                if val.is_null() {
-                                    continue;
-                                }
+                                    let status: Option<ClientStatus> = val
+                                        .as_number()
+                                        .and_then(|n| n.as_u64())
+                                        .map(|n64| (n64 as u16).into());
 
-                                let status: Option<ClientStatus> = val
-                                    .as_number()
-                                    .and_then(|n| n.as_u64())
-                                    .map(|n64| (n64 as u16).into());
+                                    if let Some(ClientStatus::ClientGoal) = status {
+                                        let data = GoalData {
+                                            room_info: client.room_info().clone(),
+                                        };
+                                        goal_tx.send(data).unwrap();
 
-                                if let Some(ClientStatus::ClientGoal) = status {
-                                    let data = GoalData {
-                                        room_info: client.room_info().clone(),
+                                        // Need to more gracefully shutdown
+                                        log::info!("Server listening thread shutting down");
+                                        return;
+                                    } else {
+                                        log::error!("Unexpected client status: {status:?}");
+                                    }
+                                } else if key.starts_with("hints_") {
+                                    if val.is_null() {
+                                        continue;
+                                    }
+
+                                    let Some(hints) = val.as_array() else {
+                                        log::error!("Hints not an array?");
+                                        continue;
                                     };
-                                    goal_tx.send(data).unwrap();
 
-                                    // Need to more gracefully shutdown
-                                    log::info!("Server listening thread shutting down");
-                                    return;
+                                    let hints_parsed = hints
+                                        .iter()
+                                        .filter_map(|v| {
+                                            let parsed: Result<HintData> =
+                                                serde_json::from_value::<Hint>(v.clone())
+                                                    .map_err(Into::into)
+                                                    .map(|v| v.into());
+                                            let Ok(hint_data) = parsed else {
+                                                log::error!("Failed to parse hint: {v}");
+                                                return None;
+                                            };
+
+                                            if hint_data.found || !hint_data.is_important {
+                                                return None;
+                                            }
+
+                                            Some(hint_data)
+                                        })
+                                        .collect::<HashSet<HintData>>();
+
+                                    let mut source_hint_queue =
+                                        game_state.source_hint_queue.write().await;
+                                    *source_hint_queue = hints_parsed;
                                 }
+                            }
+                        }
+                        ServerMessage::PrintJSON(print_json) => {
+                            if print_json.found.is_none() {
+                                // Not a hint
+                                continue;
+                            }
+
+                            let hint: HintData = print_json.into();
+
+                            if hint.item.player == game_state.slot_id
+                                && !hint.found
+                                && hint.is_important
+                            {
+                                // This hint is an item that comes from us
+                                let mut source_hint_queue =
+                                    game_state.source_hint_queue.write().await;
+                                source_hint_queue.insert(hint);
                             }
                         }
                         _ => {
