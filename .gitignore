@@ -3,3 +3,6 @@ target/
 .env
 save-file-*.json
 AP_*.json
+
+qExample.yml
+qExample.yaml

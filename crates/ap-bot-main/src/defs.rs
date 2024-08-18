@@ -136,7 +136,7 @@ impl FullGameState {
     }
 
     fn make_save_file_name(seed_name: &str) -> String {
-        format!("save-file-{seed_name}.json")
+        format!("SaveFiles/save-file-{seed_name}.json")
     }
 }
 

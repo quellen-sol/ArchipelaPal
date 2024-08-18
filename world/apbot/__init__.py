@@ -26,7 +26,7 @@ class APBotWeb(WebWorld):
 
 class APBot(World):
     """
-    An automatically world-playing bot for Archipelago Randomizer
+    An automatic world-playing bot for Archipelago Randomizer
     """
 
     game = "APBot"

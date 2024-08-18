@@ -68,14 +68,12 @@ async fn outer_main() -> Result<()> {
         .password
         .unwrap_or_else(|| get_user_input("Enter server password (Press Enter if none):").unwrap());
 
-    let slot_name = args
-        .slot_name
-        .unwrap_or_else(|| get_user_input("Enter slot name:").unwrap());
-
     let mut client =
         ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
 
     let config = load_output_file(args.output_file)?;
+
+    let slot_name = args.slot_name.unwrap_or(config.slot_name.clone());
 
     let connected_packet = client
         .connect(
@@ -93,13 +91,13 @@ async fn outer_main() -> Result<()> {
         .players
         .iter()
         .find_map(|p| {
-            if p.name == config.slot_name {
+            if p.name == slot_name {
                 Some(p.team)
             } else {
                 None
             }
         })
-        .ok_or_else(|| anyhow!("No player in server list with name {}", config.slot_name))?;
+        .ok_or_else(|| anyhow!("No player in server list with name {}", slot_name))?;
 
     let this_game_data = client
         .data_package()
@@ -137,7 +135,7 @@ async fn outer_main() -> Result<()> {
     // Task started, slight delay, then send syncing packets
     client_sender
         .send(ap_rs::protocol::ClientMessage::Get(Get {
-            keys: vec![format!("client_status_{team}_{}", config.slot_name)],
+            keys: vec![format!("client_status_{team}_{}", slot_name)],
         }))
         .await
         .context("Failed to get my status!")?;
