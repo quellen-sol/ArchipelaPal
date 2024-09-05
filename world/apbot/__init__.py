@@ -19,6 +19,7 @@ KEY_ITEM_OFFSET = 0x020000
 
 # Chest ID offset
 CHEST_ITEM_OFFSET = 0x030000
+HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
 
 class APBotWeb(WebWorld):
     tutorials = []
@@ -43,6 +44,26 @@ class APBot(World):
     # Might just do everything here?
     # Kinda wanna stay as far back as possible with this type of gen
     def generate_early(self) -> None:
+        # Populate item_names_to_id for all possible Keys, and Junk items
+        for i in range(1, 256):
+            key_code = KEY_ITEM_OFFSET + i
+            self.item_name_to_id[f"Key {i}"] = key_code
+
+        # Populate Junk Item
+        self.item_name_to_id[JUNK_ITEM_NAME] = JUNK_CODE_OFFSET
+
+        # Populate Goal Item
+        self.item_name_to_id[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
+
+        # Populate Hub Free Chest
+        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID
+
+        # Populate item_names_to_id for all possible Chests
+        for region_n in range(1, 256):
+            for chest_n in range(1, 256):
+                chest_code = CHEST_ITEM_OFFSET + (region_n << 8) + chest_n
+                self.location_name_to_id[f"Chest {region_n}-{chest_n}"] = chest_code
+
         num_regions = self.options.num_regions
 
         min_chests_per_region = self.options.min_chests_per_region
@@ -73,10 +94,8 @@ class APBot(World):
         hub = Region("Hub", self.player, self.multiworld)
 
         # Create Single Chest that contains the starting location
-        HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
         starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
-        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID
 
         total_junk_items = 0
         for region_num in range(num_regions):
@@ -94,7 +113,6 @@ class APBot(World):
                 "classification": ItemClassification.progression,
                 "code": key_code,
             }
-            self.item_name_to_id[key_name] = key_code
 
             num_chests = self.random.randint(min_chests_per_region, max_chests_per_region)
             total_junk_items += num_chests - 1
@@ -104,7 +122,6 @@ class APBot(World):
                 chest_name = f"Chest {region_display_num}-{real_chest}"
                 chest_code = CHEST_ITEM_OFFSET + (region_display_num << 8) + real_chest
 
-                self.location_name_to_id[chest_name] = chest_code
                 location = APBotLocation(self.player, chest_name, chest_code, region_obj)
                 region_obj.locations.append(location)
 
@@ -125,7 +142,6 @@ class APBot(World):
             "classification": ItemClassification.progression,
             "code": GOAL_ITEM_OFFSET,
         }
-        self.item_name_to_id[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
         for goal_num in range(num_goal_items):
             itempool.append(goal_item)
         
@@ -139,7 +155,6 @@ class APBot(World):
             "classification": ItemClassification.filler,
             "code": JUNK_CODE_OFFSET,
         }
-        self.item_name_to_id[JUNK_ITEM_NAME] = JUNK_CODE_OFFSET
         junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_CODE_OFFSET, self.player)
         for junk_num in range(total_junk_items - num_goal_items):
             itempool.append(junk_item)
@@ -149,7 +164,7 @@ class APBot(World):
         menu.connect(hub)
 
         # Debug prints
-        # print(self.item_name_to_id)
+        print(self.item_name_to_id)
         # print(self.location_name_to_id)
         # print(self.item_table)
         # print(itempool)
