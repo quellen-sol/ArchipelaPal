@@ -63,7 +63,7 @@ class APBot(World):
         starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
 
-        total_junk_items = 0
+        total_junk_items = 1
         for region_num in range(num_regions):
             region_display_num = region_num + 1
             # Create Region
