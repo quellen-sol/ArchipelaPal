@@ -118,8 +118,6 @@ pub fn spawn_ap_server_task(
                                         // Need to more gracefully shutdown
                                         log::info!("Server listening thread shutting down");
                                         return;
-                                    } else {
-                                        log::error!("Unexpected client status: {status:?}");
                                     }
                                 } else if key.starts_with("_read_hints_") {
                                     if val.is_null() {

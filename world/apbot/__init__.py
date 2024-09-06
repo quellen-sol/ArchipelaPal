@@ -2,23 +2,9 @@ import os, json
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
 from .Errors import APBotError
-from .Items import APBotItem
-from .Locations import APBotLocation
+from .Items import APBotItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET
+from .Locations import APBotLocation, loc_table, HUB_CHEST_ID, CHEST_ITEM_OFFSET
 from .Options import APBotOptions
-
-# Junk Item
-JUNK_CODE_OFFSET = 0x000000
-JUNK_ITEM_NAME = "APBot Junk"
-
-# Goal Item
-GOAL_ITEM_OFFSET = 0x010000
-GOAL_ITEM_NAME = "Magic Crystal"
-
-# Key ID offset
-KEY_ITEM_OFFSET = 0x020000
-
-# Chest ID offset
-CHEST_ITEM_OFFSET = 0x030000
 
 class APBotWeb(WebWorld):
     tutorials = []
@@ -34,11 +20,12 @@ class APBot(World):
     options: APBotOptions
     web = APBotWeb()
 
-    # We dont know any items prior to generation!
-    item_name_to_id = {}
-    location_name_to_id = {}
+    item_name_to_id = item_names_table
+    location_name_to_id = loc_table
 
     item_table = {}
+
+    chests_per_region_result: list[int] = []
 
     # Might just do everything here?
     # Kinda wanna stay as far back as possible with this type of gen
@@ -73,10 +60,8 @@ class APBot(World):
         hub = Region("Hub", self.player, self.multiworld)
 
         # Create Single Chest that contains the starting location
-        HUB_CHEST_ID = CHEST_ITEM_OFFSET + 1
         starting_chest = APBotLocation(self.player, "Hub Free Chest", HUB_CHEST_ID, hub)
         hub.locations.append(starting_chest)
-        self.location_name_to_id["Hub Free Chest"] = HUB_CHEST_ID
 
         total_junk_items = 0
         for region_num in range(num_regions):
@@ -94,9 +79,9 @@ class APBot(World):
                 "classification": ItemClassification.progression,
                 "code": key_code,
             }
-            self.item_name_to_id[key_name] = key_code
 
             num_chests = self.random.randint(min_chests_per_region, max_chests_per_region)
+            self.chests_per_region_result.append(num_chests)
             total_junk_items += num_chests - 1
 
             for chest_num in range(num_chests):
@@ -104,7 +89,6 @@ class APBot(World):
                 chest_name = f"Chest {region_display_num}-{real_chest}"
                 chest_code = CHEST_ITEM_OFFSET + (region_display_num << 8) + real_chest
 
-                self.location_name_to_id[chest_name] = chest_code
                 location = APBotLocation(self.player, chest_name, chest_code, region_obj)
                 region_obj.locations.append(location)
 
@@ -125,7 +109,6 @@ class APBot(World):
             "classification": ItemClassification.progression,
             "code": GOAL_ITEM_OFFSET,
         }
-        self.item_name_to_id[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
         for goal_num in range(num_goal_items):
             itempool.append(goal_item)
         
@@ -137,10 +120,9 @@ class APBot(World):
         # Add Junk items
         self.item_table[JUNK_ITEM_NAME] = {
             "classification": ItemClassification.filler,
-            "code": JUNK_CODE_OFFSET,
+            "code": JUNK_ITEM_CODE,
         }
-        self.item_name_to_id[JUNK_ITEM_NAME] = JUNK_CODE_OFFSET
-        junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_CODE_OFFSET, self.player)
+        junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_ITEM_CODE, self.player)
         for junk_num in range(total_junk_items - num_goal_items):
             itempool.append(junk_item)
 
@@ -172,19 +154,19 @@ class APBot(World):
         item = self.item_table[name]
         return APBotItem(name, item.classification, item.code, self.player)
 
-    def generate_output(self, output_dir: str) -> None:
+    def fill_slot_data(self):
         min_wait_time = self.options.min_time_between_checks.value
         max_wait_time = self.options.max_time_between_checks.value
         num_goal = self.options.num_goal_items.value
         slot_name = self.player_name
+        num_regions = self.options.num_regions.value
+        chests_per_region_list = self.chests_per_region_result
 
-        # Create the output file
-        base_out_name = self.multiworld.get_out_file_name_base(self.player)
-        out_file = os.path.join(output_dir, f"{base_out_name}.json")
-        with open(out_file, "w") as f:
-            json.dump({
-                "min_wait_time": min_wait_time,
-                "max_wait_time": max_wait_time,
-                "num_goal": num_goal,
-                "slot_name": slot_name,
-            }, f)
+        return {
+            "min_wait_time": min_wait_time,
+            "max_wait_time": max_wait_time,
+            "num_goal": num_goal,
+            "slot_name": slot_name,
+            "num_regions": num_regions,
+            "chests_per_region_list": chests_per_region_list,
+        }

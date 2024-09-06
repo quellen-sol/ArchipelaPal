@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock};
 
 pub const SAVE_FILE_DIRECTORY: &str = "Saves";
+pub const CHEST_OFFSET: LocationID = 0x030000;
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -217,12 +218,14 @@ impl From<SaveFile> for FullGameState {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct OutputFileConfig {
     pub min_wait_time: u16,
     pub max_wait_time: u16,
     pub num_goal: u16,
     pub slot_name: String,
+    pub num_regions: u8,
+    pub chests_per_region_list: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -236,10 +239,30 @@ impl GameMap {
         let mut map = HashMap::new();
 
         for (name, id) in data_pkg.iter() {
-            let chest = Chest::new_from_entry(id, name.clone());
+            let chest = Chest::new_from_datapackage_entry(id, name.clone());
             let entry = map.entry(chest.region).or_insert(vec![]);
             entry.push(chest);
         }
+
+        Self { map }
+    }
+
+    pub fn new_from_config(config: &OutputFileConfig) -> Self {
+        let mut map = HashMap::new();
+
+        for (region_idx, num_chests) in config.chests_per_region_list.iter().enumerate() {
+            let region_real_num = (region_idx + 1) as LocationID;
+            for chest_i in 1..=(*num_chests as LocationID) {
+                let chest_id = CHEST_OFFSET + (region_real_num << 8) + chest_i;
+                let chest = Chest::new_from_id(chest_id);
+                let entry = map.entry(chest.region).or_insert(vec![]);
+                entry.push(chest);
+            }
+        }
+
+        // Add HUB chest
+        let hub_chest = Chest::new_from_id(CHEST_OFFSET + 1);
+        map.entry(0).or_insert(vec![]).push(hub_chest);
 
         Self { map }
     }
@@ -255,7 +278,7 @@ pub struct Chest {
 }
 
 impl Chest {
-    pub fn new_from_entry(val: &i32, name: String) -> Self {
+    pub fn new_from_datapackage_entry(val: &i32, name: String) -> Self {
         let b = val.to_le_bytes();
         let number = b[0];
         let region = b[1];
@@ -266,6 +289,21 @@ impl Chest {
             number,
             region,
             full_id: *val as LocationID,
+        }
+    }
+
+    pub fn new_from_id(id: LocationID) -> Self {
+        let b = id.to_le_bytes();
+        let number = b[0];
+        let region = b[1];
+        let name = format!("Chest {region}-{number}");
+
+        Self {
+            checked: false,
+            name,
+            number,
+            region,
+            full_id: id,
         }
     }
 }

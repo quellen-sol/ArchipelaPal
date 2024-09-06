@@ -1,19 +1,17 @@
 use std::{
     fs,
     io::{stdin, stdout, Write},
-    path::PathBuf,
     sync::Arc,
     vec,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
 use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
-use rfd::FileDialog;
 use tokio::sync::oneshot;
 
 mod defs;
@@ -21,8 +19,8 @@ mod processes;
 
 #[derive(Parser)]
 struct Args {
-    #[clap()]
-    output_file: Option<PathBuf>,
+    #[clap(long, short, env)]
+    slot_name: Option<String>,
 
     #[clap(long, short = 'a', env)]
     server_addr: Option<String>,
@@ -57,6 +55,10 @@ async fn outer_main() -> Result<()> {
 
     let args = Args::parse();
 
+    let slot_name = args
+        .slot_name
+        .unwrap_or_else(|| get_user_input("Enter slot name (Press Enter if none):").unwrap());
+
     let addr = args
         .server_addr
         .unwrap_or_else(|| get_user_input("Enter server ip and port:").unwrap());
@@ -65,12 +67,7 @@ async fn outer_main() -> Result<()> {
         .password
         .unwrap_or_else(|| get_user_input("Enter server password (Press Enter if none):").unwrap());
 
-    let mut client =
-        ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
-
-    let config = load_output_file(args.output_file)?;
-
-    let slot_name = config.slot_name.clone();
+    let mut client = ArchipelagoClient::new(&addr).await?;
 
     let connected_packet = client
         .connect(
@@ -79,15 +76,16 @@ async fn outer_main() -> Result<()> {
             Some(&password),
             Some(ITEM_HANDLING), // ?
             vec!["AP".into(), "Bot".into()],
+            true,
         )
         .await?;
 
-    log::info!("Connected");
+    let config = serde_json::from_value::<OutputFileConfig>(connected_packet.slot_data)
+        .context("Could not parse slot_data??")?;
 
-    let this_game_data = client
-        .data_package()
-        .and_then(|dp| dp.games.get(GAME_NAME))
-        .ok_or_else(|| anyhow!("Data package not preset for this game and slot???"))?;
+    log::debug!("Config: {config:?}");
+
+    log::info!("Connected");
 
     let info = client.room_info();
     log::info!("Seed: {}", info.seed_name);
@@ -102,8 +100,7 @@ async fn outer_main() -> Result<()> {
 
     // Correct the game state if it ended up being a default
     if game_state.seed_name.is_empty() {
-        let loc_to_id = &this_game_data.location_name_to_id;
-        let game_map = GameMap::new_from_data_package(loc_to_id);
+        let game_map = GameMap::new_from_config(&config);
 
         let mut map_lock = game_state.map.write().await;
         *map_lock = game_map;
@@ -150,20 +147,6 @@ async fn outer_main() -> Result<()> {
     gh_joined?;
 
     Ok(())
-}
-
-fn load_output_file(path: Option<PathBuf>) -> Result<OutputFileConfig> {
-    let path = path
-        .or_else(|| {
-            FileDialog::new()
-                .set_title("Select the output file for this seed")
-                .add_filter("APBot Output File", &["json"])
-                .pick_file()
-        })
-        .ok_or_else(|| anyhow!("Could not find an output file for this seed!"))?;
-
-    Ok(fs::read_to_string(&path)
-        .and_then(|file_s| Ok(serde_json::from_str::<OutputFileConfig>(&file_s)?))?)
 }
 
 fn get_user_input(prompt: &str) -> Result<String> {
