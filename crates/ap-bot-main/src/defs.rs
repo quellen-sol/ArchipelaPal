@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock};
 
 pub const SAVE_FILE_DIRECTORY: &str = "Saves";
-pub const CHEST_OFFSET: LocationID = 0x020000;
+pub const CHEST_OFFSET: LocationID = 0x030000;
 
 pub type RegionID = u8;
 pub type LocationID = u32;
@@ -218,7 +218,7 @@ impl From<SaveFile> for FullGameState {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct OutputFileConfig {
     pub min_wait_time: u16,
     pub max_wait_time: u16,
@@ -259,6 +259,10 @@ impl GameMap {
                 entry.push(chest);
             }
         }
+
+        // Add HUB chest
+        let hub_chest = Chest::new_from_id(CHEST_OFFSET + 1);
+        map.entry(0).or_insert(vec![]).push(hub_chest);
 
         Self { map }
     }

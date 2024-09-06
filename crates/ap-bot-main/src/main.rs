@@ -67,8 +67,7 @@ async fn outer_main() -> Result<()> {
         .password
         .unwrap_or_else(|| get_user_input("Enter server password (Press Enter if none):").unwrap());
 
-    let mut client =
-        ArchipelagoClient::with_data_package(&addr, Some(vec![GAME_NAME.into()])).await?;
+    let mut client = ArchipelagoClient::new(&addr).await?;
 
     let connected_packet = client
         .connect(
@@ -83,6 +82,8 @@ async fn outer_main() -> Result<()> {
 
     let config = serde_json::from_value::<OutputFileConfig>(connected_packet.slot_data)
         .context("Could not parse slot_data??")?;
+
+    log::debug!("Config: {config:?}");
 
     log::info!("Connected");
 

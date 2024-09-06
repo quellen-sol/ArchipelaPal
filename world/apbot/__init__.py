@@ -2,7 +2,7 @@ import os, json
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
 from .Errors import APBotError
-from .Items import APBotItem, item_names_table, JUNK_CODE_OFFSET, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET
+from .Items import APBotItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET
 from .Locations import APBotLocation, loc_table, HUB_CHEST_ID, CHEST_ITEM_OFFSET
 from .Options import APBotOptions
 
@@ -120,9 +120,9 @@ class APBot(World):
         # Add Junk items
         self.item_table[JUNK_ITEM_NAME] = {
             "classification": ItemClassification.filler,
-            "code": JUNK_CODE_OFFSET,
+            "code": JUNK_ITEM_CODE,
         }
-        junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_CODE_OFFSET, self.player)
+        junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_ITEM_CODE, self.player)
         for junk_num in range(total_junk_items - num_goal_items):
             itempool.append(junk_item)
 
@@ -131,7 +131,7 @@ class APBot(World):
         menu.connect(hub)
 
         # Debug prints
-        print(self.item_name_to_id)
+        # print(self.item_name_to_id)
         # print(self.location_name_to_id)
         # print(self.item_table)
         # print(itempool)

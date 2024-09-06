@@ -3,6 +3,7 @@ from BaseClasses import Item, ItemClassification
 # Junk Item
 JUNK_CODE_OFFSET = 0x000000
 JUNK_ITEM_NAME = "APBot Junk"
+JUNK_ITEM_CODE = JUNK_CODE_OFFSET + 1
 
 # Goal Item
 GOAL_ITEM_OFFSET = 0x010000
@@ -22,7 +23,7 @@ for i in range(1, 256):
     item_names_table[f"Key {i}"] = key_code
 
 # Populate Junk Item
-item_names_table[JUNK_ITEM_NAME] = JUNK_CODE_OFFSET
+item_names_table[JUNK_ITEM_NAME] = JUNK_ITEM_CODE
 
 # Populate Goal Item
 item_names_table[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
