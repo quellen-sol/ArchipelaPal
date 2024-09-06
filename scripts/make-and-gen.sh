@@ -21,8 +21,5 @@ cd ~/Archipelago/output
 # Unzip the latest .zip file in this directory, not in it's own folder
 unzip $(ls -t | grep '.zip' | head -n1) -d .
 
-# Move all ".json" files to `../`
-mv *.json $START_DIR/../
-
 # rm all .zip files
 rm *.zip
