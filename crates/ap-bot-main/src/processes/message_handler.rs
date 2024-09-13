@@ -9,7 +9,10 @@ use std::{
 };
 use tokio::{sync::oneshot, task::JoinHandle};
 
-use crate::defs::{FullGameState, GoalData, GoalOneShotData, OutputFileConfig};
+use crate::defs::{
+    game_state::FullGameState,
+    lib::{GoalData, GoalOneShotData, OutputFileConfig},
+};
 
 pub fn spawn_ap_server_task(
     game_state: Arc<FullGameState>,

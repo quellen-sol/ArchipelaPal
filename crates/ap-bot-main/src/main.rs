@@ -8,7 +8,10 @@ use std::{
 use anyhow::{bail, Context, Result};
 use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
-use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY};
+use defs::{
+    game_state::{FullGameState, GameMap},
+    lib::{GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY},
+};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };

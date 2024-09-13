@@ -4,23 +4,17 @@ use std::{
 };
 
 use anyhow::Result;
-use ap_rs::protocol::{HintData, RoomInfo};
+use ap_rs::protocol::HintData;
 use rand::{seq::IteratorRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock};
 
-pub const SAVE_FILE_DIRECTORY: &str = "Saves";
-pub const CHEST_OFFSET: LocationID = 0x030000;
-
-pub type RegionID = u8;
-pub type LocationID = u32;
-pub type ItemID = u32;
-pub type GoalOneShotData = GoalData;
-
-#[derive(Debug)]
-pub struct GoalData {
-    pub room_info: RoomInfo,
-}
+use super::{
+    chest::Chest,
+    lib::{LocationID, OutputFileConfig, RegionID, CHEST_OFFSET, SAVE_FILE_DIRECTORY},
+    player::Player,
+    save_file::SaveFile,
+};
 
 #[derive(Debug, Default)]
 pub struct FullGameState {
@@ -188,46 +182,6 @@ impl FullGameState {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct SaveFile {
-    player: Player,
-    map: GameMap,
-    seed: String,
-    team: i32,
-    last_checked_idx: i32,
-    slot_id: i32,
-    source_hint_queue: HashSet<HintData>,
-}
-
-impl From<SaveFile> for FullGameState {
-    fn from(value: SaveFile) -> Self {
-        let player = Arc::new(RwLock::new(value.player));
-        let map = Arc::new(RwLock::new(value.map));
-        let last_checked_idx = Arc::new(RwLock::new(value.last_checked_idx));
-        let source_hint_queue = Arc::new(RwLock::new(value.source_hint_queue));
-
-        Self {
-            map,
-            player,
-            seed_name: value.seed,
-            team: value.team,
-            last_checked_idx,
-            slot_id: value.slot_id,
-            source_hint_queue,
-        }
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct OutputFileConfig {
-    pub min_wait_time: u16,
-    pub max_wait_time: u16,
-    pub num_goal: u16,
-    pub slot_name: String,
-    pub num_regions: u8,
-    pub chests_per_region_list: Vec<u8>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GameMap {
     pub map: HashMap<RegionID, Vec<Chest>>,
@@ -261,78 +215,5 @@ impl GameMap {
         }
 
         Self { map }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Chest {
-    pub name: String,
-    pub region: RegionID,
-    pub full_id: LocationID,
-    pub number: u8,
-    pub checked: bool,
-}
-
-impl Chest {
-    pub fn new_from_datapackage_entry(val: &i32, name: String) -> Self {
-        let b = val.to_le_bytes();
-        let number = b[0];
-        let region = b[1];
-
-        Self {
-            checked: false,
-            name,
-            number,
-            region,
-            full_id: *val as LocationID,
-        }
-    }
-
-    pub fn new_from_id(id: LocationID) -> Self {
-        let b = id.to_le_bytes();
-        let number = b[0];
-        let region = b[1];
-        let (base_name, num_name) = if region == 0 {
-            ("Hub Chest", number.to_string())
-        } else {
-            ("Chest", format!("{region}-{number}"))
-        };
-        let name = format!("{base_name} {num_name}");
-
-        Self {
-            checked: false,
-            name,
-            number,
-            region,
-            full_id: id,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct Player {
-    /// K = ItemID, V = qty
-    pub inventory: HashMap<ItemID, u16>,
-    // pub checked_locations: HashSet<LocationID>,
-    pub currently_exploring_region: RegionID,
-}
-
-impl Player {
-    pub fn get_key_info(&self) -> Vec<RegionID> {
-        log::debug!("{:?}", self.inventory);
-
-        self.inventory
-            .iter()
-            .filter_map(|(id, _)| {
-                let id_bytes = id.to_le_bytes();
-                let item_type = id_bytes[2];
-                let region = id_bytes[0];
-                if item_type == 0x02 {
-                    return Some(region);
-                }
-
-                None
-            })
-            .collect()
     }
 }

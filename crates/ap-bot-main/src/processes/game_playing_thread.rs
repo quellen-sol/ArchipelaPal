@@ -10,7 +10,10 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::defs::{FullGameState, GoalOneShotData, OutputFileConfig};
+use crate::defs::{
+    game_state::FullGameState,
+    lib::{GoalOneShotData, OutputFileConfig},
+};
 
 pub fn spawn_game_playing_task(
     game_state: Arc<FullGameState>,
