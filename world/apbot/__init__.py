@@ -69,7 +69,7 @@ class APBot(World):
 
             location = APBotLocation(self.player, chest_name, chest_code, hub)
             hub.locations.append(location)
-        self.chests_per_region_result.append(num_sphere_0_chests)
+        self.chests_per_region_result.append(num_sphere_0_chests.value)
 
         total_junk_items = num_sphere_0_chests
         for region_num in range(num_regions):
