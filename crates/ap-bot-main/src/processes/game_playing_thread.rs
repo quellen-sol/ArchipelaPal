@@ -52,6 +52,12 @@ pub fn spawn_game_playing_task(
                         }
                     }
 
+                    game_state
+                        .write_save_file()
+                        .await
+                        .inspect_err(|e| log::error!("Error writing save file on goal: {e}"))
+                        .ok();
+
                     // End the thread :)
                     log::info!("Shutting down gameplay thread");
                     return;
