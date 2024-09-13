@@ -56,4 +56,4 @@ class APBotOptions(PerGameCommonOptions):
     min_time_between_checks:            MinTimeBetweenChecks
     max_time_between_checks:            MaxTimeBetweenChecks
     num_goal_items:                     NumGoalItems
-    num_sphere0_chests:                 NumSphere0Chests
+    num_sphere_0_chests:                 NumSphere0Chests

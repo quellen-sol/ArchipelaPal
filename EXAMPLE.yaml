@@ -16,4 +16,4 @@ APBot:
   # Must be less than the number of chests
   num_goal_items: 20
 
-  num_sphere0_chests: 15
+  num_sphere_0_chests: 15

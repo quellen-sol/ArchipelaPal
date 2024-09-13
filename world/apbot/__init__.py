@@ -38,7 +38,7 @@ class APBot(World):
         min_time = self.options.min_time_between_checks
         max_time = self.options.max_time_between_checks
 
-        num_sphere0_chests = self.options.num_sphere0_chests
+        num_sphere_0_chests = self.options.num_sphere_0_chests
 
         num_goal_items = self.options.num_goal_items
 
@@ -62,7 +62,7 @@ class APBot(World):
         hub = Region("Hub", self.player, self.multiworld)
 
         # Create Hub Chests (Sphere 0)
-        for chest_num in range(num_sphere0_chests):
+        for chest_num in range(num_sphere_0_chests):
             real_chest = chest_num + 1
             chest_name = f"Hub Chest {real_chest}"
             chest_code = CHEST_ITEM_OFFSET + real_chest
@@ -70,7 +70,7 @@ class APBot(World):
             location = APBotLocation(self.player, chest_name, chest_code, hub)
             hub.locations.append(location)
 
-        total_junk_items = num_sphere0_chests
+        total_junk_items = num_sphere_0_chests
         for region_num in range(num_regions):
             region_display_num = region_num + 1
             # Create Region
