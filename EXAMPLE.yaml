@@ -15,3 +15,5 @@ APBot:
   # Number of goal items to generate that are required to win
   # Must be less than the number of chests
   num_goal_items: 20
+
+  num_sphere0_chests: 15
