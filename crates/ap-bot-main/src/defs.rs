@@ -251,7 +251,7 @@ impl GameMap {
         let mut map = HashMap::new();
 
         for (region_idx, num_chests) in config.chests_per_region_list.iter().enumerate() {
-            let region_real_num = (region_idx + 1) as LocationID;
+            let region_real_num = region_idx as LocationID;
             for chest_i in 1..=(*num_chests as LocationID) {
                 let chest_id = CHEST_OFFSET + (region_real_num << 8) + chest_i;
                 let chest = Chest::new_from_id(chest_id);
@@ -259,10 +259,6 @@ impl GameMap {
                 entry.push(chest);
             }
         }
-
-        // Add HUB chest
-        let hub_chest = Chest::new_from_id(CHEST_OFFSET + 1);
-        map.entry(0).or_insert(vec![]).push(hub_chest);
 
         Self { map }
     }
@@ -296,7 +292,12 @@ impl Chest {
         let b = id.to_le_bytes();
         let number = b[0];
         let region = b[1];
-        let name = format!("Chest {region}-{number}");
+        let (base_name, num_name) = if region == 0 {
+            ("Hub Chest", number.to_string())
+        } else {
+            ("Chest", format!("{region}-{number}"))
+        };
+        let name = format!("{base_name} {num_name}");
 
         Self {
             checked: false,
