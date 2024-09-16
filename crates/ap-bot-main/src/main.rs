@@ -5,10 +5,14 @@ use std::{
     vec,
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
-use defs::{FullGameState, GameMap, GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY};
+use defs::{
+    game_state::{FullGameState, GameMap},
+    lib::{GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY},
+    user_settings::UserSettings,
+};
 use processes::{
     game_playing_thread::spawn_game_playing_task, message_handler::spawn_ap_server_task,
 };
@@ -54,18 +58,53 @@ async fn outer_main() -> Result<()> {
     env_logger::init();
 
     let args = Args::parse();
+    let mut user_settings = UserSettings::load_or_default();
 
     let slot_name = args
         .slot_name
-        .unwrap_or_else(|| get_user_input("Enter slot name (Press Enter if none):").unwrap());
+        .or_else(|| {
+            let last_slot_name = &user_settings.last_used_slot;
+            let prompt = match last_slot_name {
+                Some(name) => format!("Enter slot name (Press Enter for last used: \"{name}\"):"),
+                None => "Enter slot name:".to_string(),
+            };
+            let user_input = get_user_input(&prompt).unwrap();
+            match (user_input, last_slot_name) {
+                (input, _) if input.is_empty() => last_slot_name.clone(),
+                (input, _) => Some(input),
+            }
+        })
+        .ok_or_else(|| anyhow!("Slot name cannot be empty!"))?;
+
+    user_settings.last_used_slot = Some(slot_name.clone());
 
     let addr = args
         .server_addr
-        .unwrap_or_else(|| get_user_input("Enter server ip and port:").unwrap());
+        .or_else(|| {
+            let last_server_addr = &user_settings.last_used_address;
+            let prompt = match last_server_addr {
+                Some(addr) => {
+                    format!("Enter server address (Press Enter for last used: \"{addr}\"):")
+                }
+                None => "Enter server address:".to_string(),
+            };
+            let user_input = get_user_input(&prompt).unwrap();
+            match (user_input, last_server_addr) {
+                (input, _) if input.is_empty() => last_server_addr.clone(),
+                (input, _) => Some(input),
+            }
+        })
+        .ok_or_else(|| anyhow!("Server address cannot be empty!"))?;
+
+    user_settings.last_used_address = Some(addr.clone());
 
     let password = args
         .password
         .unwrap_or_else(|| get_user_input("Enter server password (Press Enter if none):").unwrap());
+
+    user_settings
+        .save()
+        .context("Could not save user settings")?;
 
     let mut client = ArchipelagoClient::new(&addr).await?;
 
@@ -137,6 +176,10 @@ async fn outer_main() -> Result<()> {
         .send(ap_rs::protocol::ClientMessage::Sync)
         .await
         .context("Could not send sync packet!")?;
+
+    // Prompt user to start game "press enter to start"
+    let start_prompt = format!("Press Enter to start {GAME_NAME} for slot {slot_name}...");
+    get_user_input(&start_prompt)?;
 
     let game_handle =
         spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);

@@ -10,7 +10,10 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::defs::{FullGameState, GoalOneShotData, OutputFileConfig};
+use crate::defs::{
+    game_state::FullGameState,
+    lib::{GoalOneShotData, OutputFileConfig},
+};
 
 pub fn spawn_game_playing_task(
     game_state: Arc<FullGameState>,
@@ -51,6 +54,12 @@ pub fn spawn_game_playing_task(
                             log::info!("I do not have to manually release!");
                         }
                     }
+
+                    game_state
+                        .write_save_file()
+                        .await
+                        .inspect_err(|e| log::error!("Error writing save file on goal: {e}"))
+                        .ok();
 
                     // End the thread :)
                     log::info!("Shutting down gameplay thread");

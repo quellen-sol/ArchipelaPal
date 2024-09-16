@@ -42,6 +42,14 @@ class NumGoalItems(Range):
     range_end = 255
     default = 10
 
+
+class NumSphere0Chests(Range):
+    """Number of chests that require no progression to access (AKA Sphere 0)"""
+    range_start = 1
+    range_end = 255
+    default = 15
+
+
 @dataclass
 class APBotOptions(PerGameCommonOptions):
     num_regions:                        NumRegions
@@ -50,3 +58,4 @@ class APBotOptions(PerGameCommonOptions):
     min_time_between_checks:            MinTimeBetweenChecks
     max_time_between_checks:            MaxTimeBetweenChecks
     num_goal_items:                     NumGoalItems
+    num_sphere_0_chests:                NumSphere0Chests

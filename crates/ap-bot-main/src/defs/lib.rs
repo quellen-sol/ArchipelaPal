@@ -1,0 +1,25 @@
+use ap_rs::protocol::RoomInfo;
+use serde::{Deserialize, Serialize};
+
+pub const SAVE_FILE_DIRECTORY: &str = "Saves";
+pub const CHEST_OFFSET: LocationID = 0x030000;
+
+pub type RegionID = u8;
+pub type LocationID = u32;
+pub type ItemID = u32;
+pub type GoalOneShotData = GoalData;
+
+#[derive(Debug)]
+pub struct GoalData {
+    pub room_info: RoomInfo,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct OutputFileConfig {
+    pub min_wait_time: u16,
+    pub max_wait_time: u16,
+    pub num_goal: u16,
+    pub slot_name: String,
+    pub num_regions: u8,
+    pub chests_per_region_list: Vec<u8>,
+}
