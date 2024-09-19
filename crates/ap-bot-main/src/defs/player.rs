@@ -6,6 +6,8 @@ use super::lib::{ItemID, RegionID};
 
 /// Speed boost modifier percentage (10%).
 pub const SPEED_BOOST_MODIFIER_PCT: f32 = 0.1;
+pub const SPEED_BOOST_ITEM_OFFSET: ItemID = 0x040000;
+pub const SPEED_BOOST_ITEM_ID: ItemID = SPEED_BOOST_ITEM_OFFSET + 1;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
@@ -46,7 +48,7 @@ impl Player {
     }
 
     pub fn get_num_boosts(&self) -> u16 {
-        *self.inventory.get(&0x03).unwrap_or(&0)
+        *self.inventory.get(&SPEED_BOOST_ITEM_ID).unwrap_or(&0)
     }
 
     pub fn get_total_speed_modifier(&self) -> f32 {

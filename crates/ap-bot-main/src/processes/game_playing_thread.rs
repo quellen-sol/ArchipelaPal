@@ -36,6 +36,7 @@ pub fn spawn_game_playing_task(
             let wait_time = (wait_time as f32 * speed_modifier * 1000.0) as u64;
             log::debug!("waiting for {wait_time} ms");
             let duration = Duration::from_millis(wait_time);
+            drop(player);
             tokio::time::sleep(duration).await;
             match goal_rx.try_recv() {
                 Ok(data) => {

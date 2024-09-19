@@ -184,7 +184,7 @@ pub fn spawn_ap_server_task(
                     }
                 }
                 Ok(None) => {
-                    log::warn!("Got None from AP server, continuing...");
+                    log::debug!("Got None from AP server, continuing...");
                     continue;
                 }
                 Err(e) => {
