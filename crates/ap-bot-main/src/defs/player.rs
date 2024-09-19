@@ -7,13 +7,23 @@ use super::lib::{ItemID, RegionID};
 /// Speed boost modifier percentage (10%).
 pub const SPEED_BOOST_MODIFIER_PCT: f32 = 0.1;
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     /// K = ItemID, V = qty
     pub inventory: HashMap<ItemID, u16>,
     // pub checked_locations: HashSet<LocationID>,
     pub currently_exploring_region: RegionID,
     pub speed_modifier: f32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            inventory: HashMap::new(),
+            currently_exploring_region: 0,
+            speed_modifier: 1.0,
+        }
+    }
 }
 
 impl Player {

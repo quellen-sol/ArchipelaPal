@@ -183,7 +183,10 @@ pub fn spawn_ap_server_task(
                         }
                     }
                 }
-                Ok(None) => continue,
+                Ok(None) => {
+                    log::warn!("Got None from AP server, continuing...");
+                    continue;
+                }
                 Err(e) => {
                     // TODO: reconnect logic?
                     match e {
