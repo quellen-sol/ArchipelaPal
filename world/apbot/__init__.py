@@ -131,7 +131,7 @@ class APBot(World):
 
         # Add Game-affecting Items
         pct_float = pct_speed_boosts / 100
-        num_speed_boosts = int(num_sphere_0_chests * pct_float)
+        num_speed_boosts = int(total_checks * pct_float)
         # Clamp speed boosts to the number of junk items
         num_speed_boosts = min(num_speed_boosts, total_junk_items)
         self.item_table[SPEED_BOOST_NAME] = {

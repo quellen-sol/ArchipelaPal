@@ -34,4 +34,4 @@ item_names_table[JUNK_ITEM_NAME] = JUNK_ITEM_CODE
 item_names_table[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
 
 # Populate Game-affecting Items
-item_names_table[SPEED_BOOST_NAME] = GAME_AFFECTOR_OFFSET
+item_names_table[SPEED_BOOST_NAME] = SPEED_BOOST_CODE
