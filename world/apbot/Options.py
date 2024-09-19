@@ -50,6 +50,13 @@ class NumSphere0Chests(Range):
     default = 15
 
 
+class PctSpeedBoosts(Range):
+    """Percentage of chests that will contain speed boosts"""
+    range_start = 0
+    range_end = 100
+    default = 10
+
+
 @dataclass
 class APBotOptions(PerGameCommonOptions):
     num_regions:                        NumRegions
@@ -59,3 +66,4 @@ class APBotOptions(PerGameCommonOptions):
     max_time_between_checks:            MaxTimeBetweenChecks
     num_goal_items:                     NumGoalItems
     num_sphere_0_chests:                NumSphere0Chests
+    pct_speed_boosts:                   PctSpeedBoosts

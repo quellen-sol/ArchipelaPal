@@ -1,10 +1,10 @@
-import os, json
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
 from .Errors import APBotError
-from .Items import APBotItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET
+from .Items import APBotItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET, SPEED_BOOST_NAME, SPEED_BOOST_CODE
 from .Locations import APBotLocation, loc_table, CHEST_ITEM_OFFSET
 from .Options import APBotOptions
+from .utils import *
 
 class APBotWeb(WebWorld):
     tutorials = []
@@ -42,6 +42,8 @@ class APBot(World):
 
         num_goal_items = self.options.num_goal_items
 
+        pct_speed_boosts = self.options.pct_speed_boosts
+
         min_expected_chests = num_regions * min_chests_per_region + 1 # +1 for the starting chest
 
         if min_chests_per_region > max_chests_per_region:
@@ -72,6 +74,7 @@ class APBot(World):
         self.chests_per_region_result.append(num_sphere_0_chests.value)
 
         total_junk_items = num_sphere_0_chests
+        total_checks = num_sphere_0_chests
         for region_num in range(num_regions):
             region_display_num = region_num + 1
             # Create Region
@@ -89,6 +92,7 @@ class APBot(World):
             }
 
             num_chests = self.random.randint(min_chests_per_region, max_chests_per_region)
+            total_checks += num_chests
             self.chests_per_region_result.append(num_chests)
             total_junk_items += num_chests - 1
 
@@ -125,6 +129,20 @@ class APBot(World):
             GOAL_ITEM_NAME: num_goal_items,
         }, self.player)
 
+        # Add Game-affecting Items
+        pct_float = pct_speed_boosts / 100
+        num_speed_boosts = int(num_sphere_0_chests * pct_float)
+        # Clamp speed boosts to the number of junk items
+        num_speed_boosts = min(num_speed_boosts, total_junk_items)
+        self.item_table[SPEED_BOOST_NAME] = {
+            "classification": ItemClassification.useful,
+            "code": SPEED_BOOST_CODE,
+        }
+        speed_boost_item = APBotItem(SPEED_BOOST_NAME, ItemClassification.useful, SPEED_BOOST_CODE, self.player)
+        for speed_boost_num in range(num_speed_boosts):
+            itempool.append(speed_boost_item)
+        total_junk_items -= num_speed_boosts
+        
         # Add Junk items
         self.item_table[JUNK_ITEM_NAME] = {
             "classification": ItemClassification.filler,
