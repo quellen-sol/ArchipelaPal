@@ -17,3 +17,5 @@ APBot:
   num_goal_items: 20
 
   num_sphere_0_chests: 15
+
+  pct_speed_boosts: 10

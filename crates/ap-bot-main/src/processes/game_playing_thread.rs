@@ -31,7 +31,11 @@ pub fn spawn_game_playing_task(
                 let mut rng = thread_rng();
                 rng.gen_range(min_wait_time..=max_wait_time)
             };
-            let duration = Duration::from_secs(wait_time.into());
+            let player = game_state.player.read().await;
+            let speed_modifier = &player.speed_modifier;
+            let wait_time = (wait_time as f32 * speed_modifier * 1000.0) as u64;
+            log::debug!("waiting for {wait_time} ms");
+            let duration = Duration::from_millis(wait_time);
             tokio::time::sleep(duration).await;
             match goal_rx.try_recv() {
                 Ok(data) => {
