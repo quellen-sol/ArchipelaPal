@@ -3,6 +3,9 @@ game: APBot
 description: This is an example YAML that genrates between 100-200 chests with 20 goal items, and therefore 80-180 junk items
 
 APBot:
+  progression_balancing: '50'
+  accessibility: items
+
   # Number of regions to generate, and number of chests per region
   num_regions: 10
   min_chests_per_region: 10

@@ -31,6 +31,9 @@ struct Args {
 
     #[clap(long, short, env)]
     password: Option<String>,
+
+    #[clap(long)]
+    skip_start_confirmation: bool,
 }
 
 pub const GAME_NAME: &str = "APBot";
@@ -177,9 +180,11 @@ async fn outer_main() -> Result<()> {
         .await
         .context("Could not send sync packet!")?;
 
-    // Prompt user to start game "press enter to start"
-    let start_prompt = format!("Press Enter to start {GAME_NAME} for slot {slot_name}...");
-    get_user_input(&start_prompt)?;
+    if !args.skip_start_confirmation {
+        // Prompt user to start game "press enter to start"
+        let start_prompt = format!("Press Enter to start {GAME_NAME} for slot {slot_name}...");
+        get_user_input(&start_prompt)?;
+    }
 
     let game_handle =
         spawn_game_playing_task(game_state.clone(), client_sender, config.clone(), goal_rx);
