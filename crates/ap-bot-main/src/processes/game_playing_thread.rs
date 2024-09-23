@@ -31,13 +31,16 @@ pub fn spawn_game_playing_task(
                 let mut rng = thread_rng();
                 rng.gen_range(min_wait_time..=max_wait_time)
             };
-            let player = game_state.player.read().await;
-            let speed_modifier = &player.speed_modifier;
-            let wait_time = ((wait_time as f32 / speed_modifier) * 1000.0) as u64;
-            let wait_time = wait_time.max(min_wait_time as u64 * 1000);
-            log::info!("waiting for {wait_time} ms");
-            let duration = Duration::from_millis(wait_time);
-            drop(player);
+
+            let duration = {
+                // Grab a read lock here, and release after finishing
+                let player = game_state.player.read().await;
+                let speed_modifier = &player.speed_modifier;
+                let wait_time = ((wait_time as f32 / speed_modifier) * 1000.0) as u64;
+                let wait_time = wait_time.max(min_wait_time as u64 * 1000);
+                log::info!("waiting for {wait_time} ms");
+                Duration::from_millis(wait_time)
+            };
             tokio::time::sleep(duration).await;
             match goal_rx.try_recv() {
                 Ok(data) => {
