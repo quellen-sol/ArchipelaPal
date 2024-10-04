@@ -3,8 +3,8 @@ from BaseClasses import Location
 # Chest ID offset
 CHEST_ITEM_OFFSET = 0x030000
 
-class APBotLocation(Location):
-    game = "APBot"
+class ArchipelaPalLocation(Location):
+    game = "ArchipelaPal"
 
 loc_table = {}
 

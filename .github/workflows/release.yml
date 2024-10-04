@@ -35,12 +35,12 @@ jobs:
       - name: Build Linux Binary and Zip
         run: |
           cargo build --release --target ${{ env.LINUX_GNU_TARGET }}
-          zip -j ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.LINUX_GNU_TARGET }}/release/ap-bot
+          zip -j ArchipelaPal-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.LINUX_GNU_TARGET }}/release/ArchipelaPal
 
       - name: Build Windows Binary and Zip
         run: |
           cargo build --release --target ${{ env.WINDOWS_GNU_TARGET }}
-          zip -j ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ap-bot.exe
+          zip -j ArchipelaPal-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip ./target/${{ env.WINDOWS_GNU_TARGET }}/release/ArchipelaPal.exe
 
       - name: Create Draft GitHub Release
         uses: actions/create-release@v1
@@ -49,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: APBot Release ${{ github.ref }}
+          release_name: ArchipelaPal Release ${{ github.ref }}
           draft: true
           prerelease: false
       
@@ -59,8 +59,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
-          asset_name: ap-bot-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_path: ./ArchipelaPal-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_name: ArchipelaPal-${{ env.LINUX_GNU_TARGET }}-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload Windows Asset
@@ -69,8 +69,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
-          asset_name: ap-bot-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_path: ./ArchipelaPal-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
+          asset_name: ArchipelaPal-${{ env.WINDOWS_GNU_TARGET }}-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload APWorld
@@ -79,8 +79,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./world/apbot.apworld
-          asset_name: apbot.apworld
+          asset_path: ./world/archipelapal.apworld
+          asset_name: archipelapal.apworld
           asset_content_type: application/zip
 
       - name: Upload Example YAML

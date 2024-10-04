@@ -1,1 +1,1 @@
-zip -r apbot.apworld apbot
+zip -r archipelapal.apworld archipelapal
