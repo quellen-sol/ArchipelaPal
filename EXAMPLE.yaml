@@ -1,8 +1,8 @@
 name: ExampleUser
-game: APBot
+game: ArchipelaPal
 description: This is an example YAML that genrates between 100-200 chests with 20 goal items, and therefore 80-180 junk items
 
-APBot:
+ArchipelaPal:
   progression_balancing: '50'
   accessibility: items
 

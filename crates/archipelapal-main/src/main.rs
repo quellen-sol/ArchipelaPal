@@ -36,7 +36,7 @@ struct Args {
     skip_start_confirmation: bool,
 }
 
-pub const GAME_NAME: &str = "APBot";
+pub const GAME_NAME: &str = "ArchipelaPal";
 pub const ITEM_HANDLING: i32 = 0b111;
 
 #[tokio::main]
