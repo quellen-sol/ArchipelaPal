@@ -12,6 +12,11 @@ GOAL_ITEM_NAME = "Magic Crystal"
 # Key Item
 KEY_ITEM_OFFSET = 0x020000
 
+# Game-affecting Items
+GAME_AFFECTOR_OFFSET = 0x040000
+SPEED_BOOST_NAME = "Speed Boost"
+SPEED_BOOST_CODE = GAME_AFFECTOR_OFFSET + 1
+
 class APBotItem(Item):
     game = "APBot"
 
@@ -27,3 +32,6 @@ item_names_table[JUNK_ITEM_NAME] = JUNK_ITEM_CODE
 
 # Populate Goal Item
 item_names_table[GOAL_ITEM_NAME] = GOAL_ITEM_OFFSET
+
+# Populate Game-affecting Items
+item_names_table[SPEED_BOOST_NAME] = SPEED_BOOST_CODE

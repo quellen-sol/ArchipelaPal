@@ -70,6 +70,7 @@ pub fn spawn_ap_server_task(
                                 let mut last_idx_write = game_state.last_checked_idx.write().await;
                                 *last_idx_write = items.index;
                             }
+                            player.set_speed_modifier();
 
                             let player = player.downgrade();
                             // Quick goal check
@@ -182,7 +183,10 @@ pub fn spawn_ap_server_task(
                         }
                     }
                 }
-                Ok(None) => continue,
+                Ok(None) => {
+                    log::debug!("Got None from AP server, continuing...");
+                    continue;
+                }
                 Err(e) => {
                     // TODO: reconnect logic?
                     match e {
