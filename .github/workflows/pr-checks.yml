@@ -14,7 +14,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
-      - name: Cargo Check
-        run: cargo check
+      - name: Cargo test
+        run: cargo test -p ArchipelaPal
+
+        # Do not deny on clippy warnings, for now.
+        # Manually review clippy's findings
+      - name: Clippy
+        run: cargo clippy -p ArchipelaPal -- -W clippy::all
+
+      - name: Format Check
+        run: cargo fmt -p ArchipelaPal -- --check
