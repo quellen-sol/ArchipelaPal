@@ -12,6 +12,8 @@ ArchipelaPal is a bot that plays its own world in an Archipelago Randomizer, whi
 
 2. Place the `archipelapal.apworld` file in `/path/to/Archipelago/custom_worlds` (`C:\ProgramData\Archipelago` on Windows).
 
+3. Extract the zip file to any directory you like.
+
 ## Joining a MultiWorld
 
 1. Edit your yaml file to your liking, then submit it to the host, along with the `.apworld` file if required. You can grab the `EXAMPLE.yaml` file from the releases page for a template.
