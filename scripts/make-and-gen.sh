@@ -1,4 +1,10 @@
 #!/bin/bash
+# Personal script used by quellen, but, of course, can be used by anyone.
+# Note the dangerous `rm` and `find -delete` commands throughout the script.
+# This script is mainly used to generate a new world and bot, and then delete all files in the output directory except for the latest .zip file.
+# This is useful for testing the bot and world generation process.
+
+# run from "./scripts" directory, not root.
 
 set -e
 
