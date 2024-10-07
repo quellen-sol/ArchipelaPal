@@ -1,2 +1,0 @@
-class APBotError(Exception):
-    pass

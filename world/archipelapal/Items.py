@@ -2,7 +2,7 @@ from BaseClasses import Item, ItemClassification
 
 # Junk Item
 JUNK_CODE_OFFSET = 0x000000
-JUNK_ITEM_NAME = "APBot Junk"
+JUNK_ITEM_NAME = "ArchipelaPal Junk"
 JUNK_ITEM_CODE = JUNK_CODE_OFFSET + 1
 
 # Goal Item
@@ -17,8 +17,8 @@ GAME_AFFECTOR_OFFSET = 0x040000
 SPEED_BOOST_NAME = "Speed Boost"
 SPEED_BOOST_CODE = GAME_AFFECTOR_OFFSET + 1
 
-class APBotItem(Item):
-    game = "APBot"
+class ArchipelaPalItem(Item):
+    game = "ArchipelaPal"
 
 item_names_table = {}
 

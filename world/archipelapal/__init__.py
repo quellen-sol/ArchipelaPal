@@ -1,24 +1,24 @@
 from BaseClasses import Region, ItemClassification
 from worlds.AutoWorld import World, WebWorld
-from .Errors import APBotError
-from .Items import APBotItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET, SPEED_BOOST_NAME, SPEED_BOOST_CODE
-from .Locations import APBotLocation, loc_table, CHEST_ITEM_OFFSET
-from .Options import APBotOptions
+from .Errors import ArchipelaPalError
+from .Items import ArchipelaPalItem, item_names_table, JUNK_ITEM_CODE, JUNK_ITEM_NAME, GOAL_ITEM_OFFSET, GOAL_ITEM_NAME, KEY_ITEM_OFFSET, SPEED_BOOST_NAME, SPEED_BOOST_CODE
+from .Locations import ArchipelaPalLocation, loc_table, CHEST_ITEM_OFFSET
+from .Options import ArchipelaPalOptions
 from .utils import *
 
-class APBotWeb(WebWorld):
+class ArchipelaPalWeb(WebWorld):
     tutorials = []
     theme = "ice"
 
-class APBot(World):
+class ArchipelaPal(World):
     """
     An automatic world-playing bot for Archipelago Randomizer
     """
 
-    game = "APBot"
-    options_dataclass = APBotOptions
-    options: APBotOptions
-    web = APBotWeb()
+    game = "ArchipelaPal"
+    options_dataclass = ArchipelaPalOptions
+    options: ArchipelaPalOptions
+    web = ArchipelaPalWeb()
 
     item_name_to_id = item_names_table
     location_name_to_id = loc_table
@@ -47,13 +47,13 @@ class APBot(World):
         min_expected_chests = num_regions * min_chests_per_region + 1 # +1 for the starting chest
 
         if min_chests_per_region > max_chests_per_region:
-            raise APBotError(f"min_chests_per_region ({min_chests_per_region}) must be less than or equal to max_chests_per_region ({max_chests_per_region})")
+            raise ArchipelaPalError(f"min_chests_per_region ({min_chests_per_region}) must be less than or equal to max_chests_per_region ({max_chests_per_region})")
 
         if min_time > max_time:
-            raise APBotError(f"min_time_between_checks ({min_time}) must be less than or equal to max_time_between_checks ({max_time})")
+            raise ArchipelaPalError(f"min_time_between_checks ({min_time}) must be less than or equal to max_time_between_checks ({max_time})")
 
         if num_goal_items > min_expected_chests:
-            raise APBotError(f"num_goal_items ({num_goal_items}) must be less than or equal to the minimum expected number of chests ({min_expected_chests})")
+            raise ArchipelaPalError(f"num_goal_items ({num_goal_items}) must be less than or equal to the minimum expected number of chests ({min_expected_chests})")
 
         itempool = []
 
@@ -69,7 +69,7 @@ class APBot(World):
             chest_name = f"Hub Chest {real_chest}"
             chest_code = CHEST_ITEM_OFFSET + real_chest
 
-            location = APBotLocation(self.player, chest_name, chest_code, hub)
+            location = ArchipelaPalLocation(self.player, chest_name, chest_code, hub)
             hub.locations.append(location)
         self.chests_per_region_result.append(num_sphere_0_chests.value)
 
@@ -84,7 +84,7 @@ class APBot(World):
             # Create Key for this region
             key_name = f"Key {region_display_num}"
             key_code = KEY_ITEM_OFFSET + region_display_num
-            key_item = APBotItem(key_name, ItemClassification.progression, key_code, self.player)
+            key_item = ArchipelaPalItem(key_name, ItemClassification.progression, key_code, self.player)
             itempool.append(key_item)
             self.item_table[key_name] = {
                 "classification": ItemClassification.progression,
@@ -101,7 +101,7 @@ class APBot(World):
                 chest_name = f"Chest {region_display_num}-{real_chest}"
                 chest_code = CHEST_ITEM_OFFSET + (region_display_num << 8) + real_chest
 
-                location = APBotLocation(self.player, chest_name, chest_code, region_obj)
+                location = ArchipelaPalLocation(self.player, chest_name, chest_code, region_obj)
                 region_obj.locations.append(location)
 
             self.multiworld.regions.append(region_obj)
@@ -116,7 +116,7 @@ class APBot(World):
             hub.connect(region_obj, None, rule)
 
         # Add Goal items
-        goal_item = APBotItem(GOAL_ITEM_NAME, ItemClassification.progression, GOAL_ITEM_OFFSET, self.player)
+        goal_item = ArchipelaPalItem(GOAL_ITEM_NAME, ItemClassification.progression, GOAL_ITEM_OFFSET, self.player)
         self.item_table[GOAL_ITEM_NAME] = {
             "classification": ItemClassification.progression,
             "code": GOAL_ITEM_OFFSET,
@@ -138,7 +138,7 @@ class APBot(World):
             "classification": ItemClassification.useful,
             "code": SPEED_BOOST_CODE,
         }
-        speed_boost_item = APBotItem(SPEED_BOOST_NAME, ItemClassification.useful, SPEED_BOOST_CODE, self.player)
+        speed_boost_item = ArchipelaPalItem(SPEED_BOOST_NAME, ItemClassification.useful, SPEED_BOOST_CODE, self.player)
         for speed_boost_num in range(num_speed_boosts):
             itempool.append(speed_boost_item)
         total_junk_items -= num_speed_boosts
@@ -148,7 +148,7 @@ class APBot(World):
             "classification": ItemClassification.filler,
             "code": JUNK_ITEM_CODE,
         }
-        junk_item = APBotItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_ITEM_CODE, self.player)
+        junk_item = ArchipelaPalItem(JUNK_ITEM_NAME, ItemClassification.filler, JUNK_ITEM_CODE, self.player)
         for junk_num in range(total_junk_items - num_goal_items):
             itempool.append(junk_item)
 
@@ -176,9 +176,9 @@ class APBot(World):
     def create_items(self) -> None:
         pass
 
-    def create_item(self, name: str) -> APBotItem:
+    def create_item(self, name: str) -> ArchipelaPalItem:
         item = self.item_table[name]
-        return APBotItem(name, item.classification, item.code, self.player)
+        return ArchipelaPalItem(name, item.classification, item.code, self.player)
 
     def fill_slot_data(self):
         min_wait_time = self.options.min_time_between_checks.value

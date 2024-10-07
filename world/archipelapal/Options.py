@@ -58,7 +58,7 @@ class PctSpeedBoosts(Range):
 
 
 @dataclass
-class APBotOptions(PerGameCommonOptions):
+class ArchipelaPalOptions(PerGameCommonOptions):
     num_regions:                        NumRegions
     min_chests_per_region:              MinChestsPerRegion
     max_chests_per_region:              MaxChestsPerRegion
