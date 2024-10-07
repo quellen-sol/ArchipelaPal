@@ -30,7 +30,7 @@ ArchipelaPal is a bot that plays its own world in an Archipelago Randomizer, whi
 
 ArchipelaPal's game world and gameplay are laid out as follows:
 
-- ArchipelaPal spawns its `Hub` region in the "center" of its own world. This area has a configurable number of Sphere 0 chests it will check first (`num_sphere_0_chests`).
+- ArchipelaPal spawns at its `Hub` region in the "center" of its own world. This area has a configurable number of Sphere 0 chests it will check first (`num_sphere_0_chests`).
 - There are a configurable number of `Regions` locked behind `Keys` in the world. These regions must have a minimum of `min_chests_per_region` chests and a maximum of `max_chests_per_region`. `Regions` are simply numbered and correspond with one `Key` (i.e., `Region 1` is locked by `Key 1` which must be found). This is to simulate progression items similar to other games, which unlock a certain number of checks each.
 - ArchipelaPal will check these regions in a random order, in a random interval between `min_time_between_checks` and `max_time_between_checks` (in seconds), but cannot check another region until it has the required key.
 - ArchipelaPal will check all available checks in a region before moving on to the next region. However, if a `progression` or `useful` item is hinted to be in ArchipelaPal's world, it will check that location as soon as it is logically available.

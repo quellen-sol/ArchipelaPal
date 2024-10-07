@@ -1,0 +1,20 @@
+name: PR Code Checks
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  pr-checks:
+    name: PR Code Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Cargo Check
+        run: cargo check
