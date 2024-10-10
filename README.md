@@ -1,6 +1,6 @@
 # ArchipelaPal
 
-ArchipelaPal is a bot that plays its own world in an Archipelago Randomizer, which can be useful for world developers or for those who prefer not to or are unable to organize a game with others.
+ArchipelaPal is a bot that autonomously plays its own world in an Archipelago Randomizer, perfect for world developers and players who prefer a solo experience or find organizing multiplayer games challenging.
 
 ## Prerequisites
 
