@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use super::lib::{ItemID, RegionID};
 
-/// Speed boost modifier percentage (10%).
-pub const SPEED_BOOST_MODIFIER_PCT: f32 = 0.1;
+/// Speed boost modifier percentage (1%).
+pub const SPEED_BOOST_MODIFIER_PCT: f32 = 0.01;
 pub const SPEED_BOOST_ITEM_OFFSET: ItemID = 0x040000;
 pub const SPEED_BOOST_ITEM_ID: ItemID = SPEED_BOOST_ITEM_OFFSET + 1;
 
@@ -54,9 +54,9 @@ impl Player {
     pub fn get_total_speed_modifier(&self) -> f32 {
         // Testing multiple types of modifiers
         let speed_boosts = self.get_num_boosts();
-        // Simple stacking 10%
+        // Simple stacking 1%
         let modifier = speed_boosts as f32 * SPEED_BOOST_MODIFIER_PCT + 1.0;
-        // Exponential 10%
+        // Exponential 1%
         // let modifier = (1.0 + SPEED_BOOST_MODIFIER_PCT).powf(speed_boosts as f32);
 
         modifier
