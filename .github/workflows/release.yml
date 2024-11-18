@@ -18,10 +18,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Make APWorld
-        run: |
-          cd ./world
-          ./make_apworld.sh
-          cd -
+        run: ./make_apworld.sh
 
       - name: Setup Targets
         run: |
@@ -79,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./world/archipelapal.apworld
+          asset_path: ./archipelapal.apworld
           asset_name: archipelapal.apworld
           asset_content_type: application/zip
 
