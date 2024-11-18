@@ -38,6 +38,13 @@ impl FullGameState {
         // Check if we can get something from the hint list first
         let source_hint_queue = self.source_hint_queue.read().await;
         let hint_item = source_hint_queue.iter().find_map(|hint| {
+            if hint.item.player != self.slot_id {
+                log::warn!(
+                    "Hint from another player in source hint queue! This is a bug! Ignoring."
+                );
+                return None;
+            }
+
             let loc_id = hint.item.location;
             let loc_id_bytes = loc_id.to_le_bytes();
             let region = loc_id_bytes[1];

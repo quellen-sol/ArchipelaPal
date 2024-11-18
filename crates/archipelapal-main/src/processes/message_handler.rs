@@ -145,7 +145,11 @@ pub fn spawn_ap_server_task(
                                                 return None;
                                             };
 
-                                            if hint_data.found || !hint_data.is_important {
+                                            // We only care about hints from ourselves, for now
+                                            if hint_data.item.player != game_state.slot_id
+                                                || hint_data.found
+                                                || !hint_data.is_important
+                                            {
                                                 return None;
                                             }
 

@@ -55,11 +55,11 @@ impl Player {
         // Testing multiple types of modifiers
         let speed_boosts = self.get_num_boosts();
         // Simple stacking 1%
-        let modifier = speed_boosts as f32 * SPEED_BOOST_MODIFIER_PCT + 1.0;
+
         // Exponential 1%
         // let modifier = (1.0 + SPEED_BOOST_MODIFIER_PCT).powf(speed_boosts as f32);
 
-        modifier
+        speed_boosts as f32 * SPEED_BOOST_MODIFIER_PCT + 1.0
     }
 
     pub fn set_speed_modifier(&mut self) {
