@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::lib::{ItemID, RegionID};
+use super::{
+    items::{Effect, Item},
+    lib::{ItemID, RegionID},
+};
 
 /// Speed boost modifier percentage (1%).
 pub const SPEED_BOOST_MODIFIER_PCT: f32 = 0.01;
-pub const SPEED_BOOST_ITEM_OFFSET: ItemID = 0x040000;
-pub const SPEED_BOOST_ITEM_ID: ItemID = SPEED_BOOST_ITEM_OFFSET + 1;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
@@ -29,26 +30,43 @@ impl Default for Player {
 }
 
 impl Player {
-    pub fn get_key_info(&self) -> Vec<RegionID> {
-        log::debug!("{:?}", self.inventory);
-
+    pub fn get_accessible_regions(&self) -> Vec<RegionID> {
         self.inventory
             .iter()
             .filter_map(|(id, _)| {
-                let id_bytes = id.to_le_bytes();
-                let item_type = id_bytes[2];
-                let region = id_bytes[0];
-                if item_type == 0x02 {
-                    return Some(region);
+                let item = Item::from_id(*id)?;
+                match item {
+                    Item::Key(region) => Some(region),
+                    _ => None,
                 }
-
-                None
             })
             .collect()
     }
 
+    pub fn get_num_goal_items(&self) -> u16 {
+        self.inventory
+            .iter()
+            .filter_map(|(id, amt)| {
+                let item = Item::try_from_le_bytes(&id.to_le_bytes())?;
+                match item {
+                    Item::Goal => Some(*amt),
+                    _ => None,
+                }
+            })
+            .sum::<u16>()
+    }
+
     pub fn get_num_boosts(&self) -> u16 {
-        *self.inventory.get(&SPEED_BOOST_ITEM_ID).unwrap_or(&0)
+        self.inventory
+            .iter()
+            .filter_map(|(id, amt)| {
+                let item = Item::from_id(*id)?;
+                match item {
+                    Item::GameAffector(Effect::SpeedBoost) => Some(*amt),
+                    _ => None,
+                }
+            })
+            .sum::<u16>()
     }
 
     pub fn get_total_speed_modifier(&self) -> f32 {

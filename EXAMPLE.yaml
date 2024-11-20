@@ -22,3 +22,5 @@ ArchipelaPal:
   num_sphere_0_chests: 15
 
   pct_speed_boosts: 10
+
+  game_theme: Adventure

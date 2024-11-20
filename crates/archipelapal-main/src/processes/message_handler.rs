@@ -11,13 +11,13 @@ use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::defs::{
     game_state::FullGameState,
-    lib::{GoalData, GoalOneShotData, OutputFileConfig},
+    lib::{ArchipelaPalSlotData, GoalData, GoalOneShotData},
 };
 
 pub fn spawn_ap_server_task(
     game_state: Arc<FullGameState>,
     mut client: ArchipelagoClientReceiver,
-    config: OutputFileConfig,
+    config: ArchipelaPalSlotData,
     goal_tx: oneshot::Sender<GoalOneShotData>,
 ) -> JoinHandle<()> {
     println!("Now listening for AP server messages");
@@ -74,10 +74,7 @@ pub fn spawn_ap_server_task(
 
                             let player = player.downgrade();
                             // Quick goal check
-                            let player_goaled = player
-                                .inventory
-                                .get(&0x010000)
-                                .is_some_and(|v| *v >= config.num_goal);
+                            let player_goaled = player.get_num_goal_items() >= config.num_goal;
 
                             if player_goaled {
                                 log::info!("GOOOOAAALLLLL");

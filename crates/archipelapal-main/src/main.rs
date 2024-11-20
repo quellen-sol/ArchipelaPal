@@ -10,7 +10,7 @@ use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
 use defs::{
     game_state::{FullGameState, GameMap},
-    lib::{GoalOneShotData, OutputFileConfig, SAVE_FILE_DIRECTORY},
+    lib::{ArchipelaPalSlotData, GoalOneShotData, SAVE_FILE_DIRECTORY},
     user_settings::UserSettings,
 };
 use processes::{
@@ -20,6 +20,7 @@ use tokio::sync::oneshot;
 
 mod defs;
 mod processes;
+mod utils;
 
 #[derive(Parser)]
 struct Args {
@@ -117,12 +118,12 @@ async fn outer_main() -> Result<()> {
             &slot_name,
             Some(&password),
             Some(ITEM_HANDLING), // ?
-            vec!["AP".into(), "Bot".into()],
+            vec!["AP".into(), "Pal".into()],
             true,
         )
         .await?;
 
-    let config = serde_json::from_value::<OutputFileConfig>(connected_packet.slot_data)
+    let config = serde_json::from_value::<ArchipelaPalSlotData>(connected_packet.slot_data)
         .context("Could not parse slot_data??")?;
 
     log::debug!("Config: {config:?}");

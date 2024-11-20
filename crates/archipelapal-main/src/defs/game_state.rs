@@ -9,9 +9,12 @@ use rand::{seq::IteratorRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use tokio::{fs, sync::RwLock};
 
+use crate::utils::get_region_from_loc_id;
+
 use super::{
     chest::Chest,
-    lib::{LocationID, OutputFileConfig, RegionID, CHEST_OFFSET, SAVE_FILE_DIRECTORY},
+    lib::{ArchipelaPalSlotData, LocationID, RegionID, SAVE_FILE_DIRECTORY},
+    offsets::CHEST_OFFSET,
     player::Player,
     save_file::SaveFile,
 };
@@ -32,7 +35,7 @@ impl FullGameState {
     /// Returns a checked location's ID, if we check one
     pub async fn tick_game_state(&self) -> Option<LocationID> {
         let player = self.player.read().await;
-        let player_region_keys = player.get_key_info();
+        let player_region_keys = player.get_accessible_regions();
         log::debug!("Region keys: {:?}", player_region_keys);
 
         // Check if we can get something from the hint list first
@@ -46,8 +49,7 @@ impl FullGameState {
             }
 
             let loc_id = hint.item.location;
-            let loc_id_bytes = loc_id.to_le_bytes();
-            let region = loc_id_bytes[1];
+            let region = get_region_from_loc_id(loc_id as u32);
             if player_region_keys.contains(&region) {
                 return Some(hint.item.location);
             }
@@ -56,7 +58,7 @@ impl FullGameState {
         });
 
         if let Some(hint_loc) = hint_item {
-            let region = hint_loc.to_le_bytes()[1];
+            let region = get_region_from_loc_id(hint_loc as u32);
             let mut map = self.map.write().await;
             let chest = map
                 .map
@@ -94,9 +96,10 @@ impl FullGameState {
         drop(player);
         drop(map);
 
-        let mapped_chest_options = initial_chest
-            .map(|idx| (search_region, idx))
-            .or(alternate_chest);
+        let mapped_chest_options = initial_chest.map(|idx| (search_region, idx)).or_else(|| {
+            log::debug!("No chest found in initial region, trying alternate...");
+            alternate_chest
+        });
 
         let chosen_check = if let Some((chosen_region, chosen_chest_idx)) = mapped_chest_options {
             if chosen_region != search_region {
@@ -132,6 +135,7 @@ impl FullGameState {
     }
 
     pub fn choose_chest_in_region(map_guard: &GameMap, region: &RegionID) -> Option<usize> {
+        log::debug!("Choosing chest in region: {region}");
         let mut rng = thread_rng();
         map_guard
             .map
@@ -195,26 +199,18 @@ pub struct GameMap {
 }
 
 impl GameMap {
-    /// from `location_name_to_id`
-    pub fn new_from_data_package(data_pkg: &HashMap<String, i32>) -> Self {
-        let mut map = HashMap::new();
-
-        for (name, id) in data_pkg.iter() {
-            let chest = Chest::new_from_datapackage_entry(id, name.clone());
-            let entry = map.entry(chest.region).or_insert(vec![]);
-            entry.push(chest);
-        }
-
-        Self { map }
-    }
-
-    pub fn new_from_config(config: &OutputFileConfig) -> Self {
+    pub fn new_from_config(config: &ArchipelaPalSlotData) -> Self {
+        let theme_number = &config.game_theme;
         let mut map = HashMap::new();
 
         for (region_idx, num_chests) in config.chests_per_region_list.iter().enumerate() {
             let region_real_num = region_idx as LocationID;
             for chest_i in 1..=(*num_chests as LocationID) {
-                let chest_id = CHEST_OFFSET + (region_real_num << 8) + chest_i;
+                let chest_id = CHEST_OFFSET
+                    + (region_real_num << 16)
+                    + ((*theme_number as LocationID) << 8)
+                    + chest_i;
+                log::debug!("Creating chest with ID: {chest_id} (Hex: {chest_id:x})");
                 let chest = Chest::new_from_id(chest_id);
                 let entry = map.entry(chest.region).or_insert(vec![]);
                 entry.push(chest);
