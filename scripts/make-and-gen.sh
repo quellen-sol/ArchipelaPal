@@ -10,9 +10,9 @@ set -e
 
 START_DIR=$(pwd)
 
-cd ../world
+cd ../
 ./make_apworld.sh
-mv archipelapal.apworld ~/Archipelago/lib/worlds/
+mv archipelapal.apworld ~/Archipelago/custom_worlds/
 cd ~/Archipelago/output
 
 # Delete ALL files in this directory, except for .zip files
