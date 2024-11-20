@@ -12,13 +12,13 @@ use tokio::{
 
 use crate::defs::{
     game_state::FullGameState,
-    lib::{GoalOneShotData, OutputFileConfig},
+    lib::{GoalOneShotData, ArchipelaPalSlotData},
 };
 
 pub fn spawn_game_playing_task(
     game_state: Arc<FullGameState>,
     mut sender: ArchipelagoClientSender,
-    config: OutputFileConfig,
+    config: ArchipelaPalSlotData,
     mut goal_rx: oneshot::Receiver<GoalOneShotData>,
 ) -> JoinHandle<()> {
     println!("Searching for items...");

@@ -11,7 +11,8 @@ use tokio::{fs, sync::RwLock};
 
 use super::{
     chest::Chest,
-    lib::{LocationID, OutputFileConfig, RegionID, CHEST_OFFSET, SAVE_FILE_DIRECTORY},
+    lib::{ArchipelaPalSlotData, LocationID, RegionID, SAVE_FILE_DIRECTORY},
+    offsets::CHEST_OFFSET,
     player::Player,
     save_file::SaveFile,
 };
@@ -32,7 +33,7 @@ impl FullGameState {
     /// Returns a checked location's ID, if we check one
     pub async fn tick_game_state(&self) -> Option<LocationID> {
         let player = self.player.read().await;
-        let player_region_keys = player.get_key_info();
+        let player_region_keys = player.get_accessible_regions();
         log::debug!("Region keys: {:?}", player_region_keys);
 
         // Check if we can get something from the hint list first
@@ -195,26 +196,17 @@ pub struct GameMap {
 }
 
 impl GameMap {
-    /// from `location_name_to_id`
-    pub fn new_from_data_package(data_pkg: &HashMap<String, i32>) -> Self {
-        let mut map = HashMap::new();
-
-        for (name, id) in data_pkg.iter() {
-            let chest = Chest::new_from_datapackage_entry(id, name.clone());
-            let entry = map.entry(chest.region).or_insert(vec![]);
-            entry.push(chest);
-        }
-
-        Self { map }
-    }
-
-    pub fn new_from_config(config: &OutputFileConfig) -> Self {
+    pub fn new_from_config(config: &ArchipelaPalSlotData) -> Self {
+        let theme_number = &config.game_theme;
         let mut map = HashMap::new();
 
         for (region_idx, num_chests) in config.chests_per_region_list.iter().enumerate() {
             let region_real_num = region_idx as LocationID;
             for chest_i in 1..=(*num_chests as LocationID) {
-                let chest_id = CHEST_OFFSET + (region_real_num << 8) + chest_i;
+                let chest_id = CHEST_OFFSET
+                    + (region_real_num << 16)
+                    + ((*theme_number as LocationID) << 8)
+                    + chest_i;
                 let chest = Chest::new_from_id(chest_id);
                 let entry = map.entry(chest.region).or_insert(vec![]);
                 entry.push(chest);
