@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
                 }
                 let elapsed = last_check_time.elapsed().as_secs();
                 elapsed_points.push(elapsed.to_string());
-                log::warn!("Elapsed: {elapsed}");
+                println!("Elapsed: {elapsed}");
                 if current_checks == 0 {
                     lowest_time = elapsed;
                     highest_time = elapsed;
@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
 
                 fs::write("elapsed_points.csv", elapsed_points.join("\n"))?;
 
-                log::warn!("Checks: {current_checks}, Lowest: {lowest_time}, Highest: {highest_time}, Average: {average_time:.2}");
+                println!("Checks: {current_checks}, Lowest: {lowest_time}, Highest: {highest_time}, Average: {average_time:.2}");
             }
             _ => continue,
         }
