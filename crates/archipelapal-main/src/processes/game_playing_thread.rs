@@ -95,7 +95,7 @@ pub fn spawn_game_playing_task(
                 }
                 Some(loc_id) => {
                     // Found an item!
-                    println!("Checked location ID: {loc_id}");
+                    println!("Checked location ID: {loc_id} (Hex: {loc_id:x})");
                     let loc_id = loc_id as i32;
                     match sender.location_checks(vec![loc_id]).await {
                         Ok(_) => {

@@ -207,6 +207,7 @@ impl GameMap {
                     + (region_real_num << 16)
                     + ((*theme_number as LocationID) << 8)
                     + chest_i;
+                log::debug!("Chest ID: {chest_id} (Hex: {chest_id:x})");
                 let chest = Chest::new_from_id(chest_id);
                 let entry = map.entry(chest.region).or_insert(vec![]);
                 entry.push(chest);
