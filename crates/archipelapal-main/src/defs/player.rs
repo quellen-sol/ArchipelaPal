@@ -34,8 +34,7 @@ impl Player {
         self.inventory
             .iter()
             .filter_map(|(id, _)| {
-                let id_bytes = id.to_le_bytes();
-                let item = Item::try_from_le_bytes(&id_bytes)?;
+                let item = Item::from_id(*id)?;
                 match item {
                     Item::Key(region) => Some(region),
                     _ => None,
@@ -54,21 +53,20 @@ impl Player {
                     _ => None,
                 }
             })
-            .fold(0, |acc, amt| acc + amt)
+            .sum::<u16>()
     }
 
     pub fn get_num_boosts(&self) -> u16 {
         self.inventory
             .iter()
             .filter_map(|(id, amt)| {
-                let id_bytes = id.to_le_bytes();
-                let item = Item::try_from_le_bytes(&id_bytes)?;
+                let item = Item::from_id(*id)?;
                 match item {
                     Item::GameAffector(Effect::SpeedBoost) => Some(*amt),
                     _ => None,
                 }
             })
-            .fold(0, |acc, amt| acc + amt)
+            .sum::<u16>()
     }
 
     pub fn get_total_speed_modifier(&self) -> f32 {

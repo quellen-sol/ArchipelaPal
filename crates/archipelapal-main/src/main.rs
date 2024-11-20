@@ -10,7 +10,7 @@ use ap_rs::{client::ArchipelagoClient, protocol::Get};
 use clap::Parser;
 use defs::{
     game_state::{FullGameState, GameMap},
-    lib::{GoalOneShotData, ArchipelaPalSlotData, SAVE_FILE_DIRECTORY},
+    lib::{ArchipelaPalSlotData, GoalOneShotData, SAVE_FILE_DIRECTORY},
     user_settings::UserSettings,
 };
 use processes::{
@@ -20,6 +20,7 @@ use tokio::sync::oneshot;
 
 mod defs;
 mod processes;
+mod utils;
 
 #[derive(Parser)]
 struct Args {

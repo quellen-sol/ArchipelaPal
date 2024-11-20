@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::utils::get_region_from_loc_id;
+
 use super::lib::{LocationID, RegionID};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -12,9 +14,8 @@ pub struct Chest {
 
 impl Chest {
     pub fn new_from_id(id: LocationID) -> Self {
-        let b = id.to_le_bytes();
-        let number = b[0];
-        let region = b[1];
+        let number = id.to_le_bytes()[0];
+        let region = get_region_from_loc_id(id);
 
         Self {
             checked: false,

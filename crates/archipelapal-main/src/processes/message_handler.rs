@@ -11,7 +11,7 @@ use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::defs::{
     game_state::FullGameState,
-    lib::{GoalData, GoalOneShotData, ArchipelaPalSlotData},
+    lib::{ArchipelaPalSlotData, GoalData, GoalOneShotData},
 };
 
 pub fn spawn_ap_server_task(

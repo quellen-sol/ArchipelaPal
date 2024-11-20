@@ -12,7 +12,7 @@ use tokio::{
 
 use crate::defs::{
     game_state::FullGameState,
-    lib::{GoalOneShotData, ArchipelaPalSlotData},
+    lib::{ArchipelaPalSlotData, GoalOneShotData},
 };
 
 pub fn spawn_game_playing_task(
