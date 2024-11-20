@@ -1,0 +1,16 @@
+[package]
+name = "ap-performance-reader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+tokio = { version = "1.40.0", features = ["full"] }
+archipelago_rs = { git = "https://github.com/quellen-sol/archipelago_rs.git", branch = "main" }
+clap = { version = "4.5.20", features = ["derive", "env"] }
+dotenvy = "0.15.7"
+log = "0.4.22"
+env_logger = "0.11.5"
+anyhow = "1.0.90"
+chrono = "0.4.38"
